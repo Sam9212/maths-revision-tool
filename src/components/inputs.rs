@@ -1,0 +1,78 @@
+use yew::prelude::*;
+use chrono::Utc;
+use web_sys::{
+    HtmlInputElement,
+    wasm_bindgen::JsCast,
+};
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct LengthValidationInputProps {
+    #[prop_or(Callback::from(|_| ()))]
+    pub onchange: Callback<Event>,
+    #[prop_or(AttrValue::from("text"))]
+    pub input_type: AttrValue,
+    pub children: Children,
+    pub id: AttrValue,
+    pub required: bool,
+    pub min_length: usize,
+    pub max_length: usize,
+    #[prop_or(Classes::new())]
+    pub class: Classes,
+    #[prop_or(None)]
+    pub valid: Option<UseStateHandle<bool>>,
+}
+
+#[function_component(LengthValidationInput)]
+pub fn length_validation_input(props: &LengthValidationInputProps) -> Html {
+    let LengthValidationInputProps { min_length, max_length, id, input_type, children, required, onchange, class, valid } = props.clone();
+    let valid = if let Some(valid) = valid { *valid } else { true };
+    let maxlength = max_length.to_string();
+    
+    let onfocusout = move |e: FocusEvent| {
+        let ele = e.target().and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
+        if let Some(ele) = ele {
+            let len = ele.value().len();
+            if len < min_length || len > max_length || !valid {
+                ele.set_attribute("valid", "false").expect("error setting valid status");
+            } else {
+                ele.set_attribute("valid", "true").expect("error setting valid status");
+            }
+
+            if len == 0 {
+                ele.set_attribute("empty", "true").expect("error setting valid status");
+            } else {
+                ele.set_attribute("empty", "false").expect("error setting valid status");
+            }
+        }
+    };
+
+    html!{
+        <div {class}>
+            <label for={id.clone()}>{ children }</label>
+            <input type={input_type} name={id.clone()} {id} {required} {maxlength} {onchange} {onfocusout}/>
+        </div>
+    }
+}
+
+#[derive(Properties, PartialEq, Clone)]
+pub struct DateInputProps {
+    pub class: Classes,
+    pub children: Children,
+    pub id: AttrValue,
+    pub onchange: Callback<Event>,
+}
+
+#[function_component(DateInput)]
+pub fn date_input(props: &DateInputProps) -> Html {
+    let DateInputProps { class, children, id, onchange } = props.clone();
+
+    let now = Utc::now();
+    let now = now.format("%Y-%m-%d");
+
+    html!{
+        <div {class}>
+            <label for={id.clone()}>{ children }</label>
+            <input type={"date"} {onchange} name={id.clone()} {id} min={"1990-01-01"} max={now.to_string()}/>
+        </div>
+    }
+}

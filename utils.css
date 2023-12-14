@@ -1,0 +1,491 @@
+.margin-1qrem {
+    margin: 0.25rem;
+}
+
+.margin-1hrem {
+    margin: 0.5rem;
+}
+
+.margin-3qrem {
+    margin: 0.75rem;
+}
+
+.margin-1rem {
+    margin: 1rem;
+}
+
+.margin-2rem {
+    margin: 2rem;
+}
+
+.margin-3rem {
+    margin: 3rem;
+}
+
+.margin-4rem {
+    margin: 4rem;
+}
+
+.margin-left-1qrem {
+    margin-left: 0.25rem;
+}
+
+.margin-left-1hrem {
+    margin-left: 0.5rem;
+}
+
+.margin-left-3qrem {
+    margin-left: 0.75rem;
+}
+
+.margin-left-1rem {
+    margin-left: 1rem;
+}
+
+.margin-left-2rem {
+    margin-left: 2rem;
+}
+
+.margin-left-3rem {
+    margin-left: 3rem;
+}
+
+.margin-left-4rem {
+    margin-left: 4rem;
+}
+
+.margin-right-1qrem {
+    margin-right: 0.25rem;
+}
+
+.margin-right-1hrem {
+    margin-right: 0.5rem;
+}
+
+.margin-right-3qrem {
+    margin-right: 0.75rem;
+}
+
+.margin-right-1rem {
+    margin-right: 1rem;
+}
+
+.margin-right-2rem {
+    margin-right: 2rem;
+}
+
+.margin-right-3rem {
+    margin-right: 3rem;
+}
+
+.margin-right-4rem {
+    margin-right: 4rem;
+}
+
+.margin-bottom-1qrem {
+    margin-bottom: 0.25rem;
+}
+
+.margin-bottom-1hrem {
+    margin-bottom: 0.5rem;
+}
+
+.margin-bottom-3qrem {
+    margin-bottom: 0.75rem;
+}
+
+.margin-bottom-1rem {
+    margin-bottom: 1rem;
+}
+
+.margin-bottom-2rem {
+    margin-bottom: 2rem;
+}
+
+.margin-bottom-3rem {
+    margin-bottom: 3rem;
+}
+
+.margin-bottom-4rem {
+    margin-bottom: 4rem;
+}
+
+.margin-top-1qrem {
+    margin-top: 0.25rem;
+}
+
+.margin-top-1hrem {
+    margin-top: 0.5rem;
+}
+
+.margin-top-3qrem {
+    margin-top: 0.75rem;
+}
+
+.margin-top-1rem {
+    margin-top: 1rem;
+}
+
+.margin-top-2rem {
+    margin-top: 2rem;
+}
+
+.margin-top-3rem {
+    margin-top: 3rem;
+}
+
+.margin-top-4rem {
+    margin-top: 4rem;
+}
+
+.padding-1qrem {
+    padding: 0.25rem;
+}
+
+.padding-1hrem {
+    padding: 0.5rem;
+}
+
+.padding-3qrem {
+    padding: 0.75rem;
+}
+
+.padding-1rem {
+    padding: 1rem;
+}
+
+.padding-2rem {
+    padding: 2rem;
+}
+
+.padding-3rem {
+    padding: 3rem;
+}
+
+.padding-4rem {
+    padding: 4rem;
+}
+
+.padding-left-1qrem {
+    padding-left: 0.25rem;
+}
+
+.padding-left-1hrem {
+    padding-left: 0.5rem;
+}
+
+.padding-left-3qrem {
+    padding-left: 0.75rem;
+}
+
+.padding-left-1rem {
+    padding-left: 1rem;
+}
+
+.padding-left-2rem {
+    padding-left: 2rem;
+}
+
+.padding-left-3rem {
+    padding-left: 3rem;
+}
+
+.padding-left-4rem {
+    padding-left: 4rem;
+}
+
+.padding-right-1qrem {
+    padding-right: 0.25rem;
+}
+
+.padding-right-1hrem {
+    padding-right: 0.5rem;
+}
+
+.padding-right-3qrem {
+    padding-right: 0.75rem;
+}
+
+.padding-right-1rem {
+    padding-right: 1rem;
+}
+
+.padding-right-2rem {
+    padding-right: 2rem;
+}
+
+.padding-right-3rem {
+    padding-right: 3rem;
+}
+
+.padding-right-4rem {
+    padding-right: 4rem;
+}
+
+.padding-bottom-1qrem {
+    padding-bottom: 0.25rem;
+}
+
+.padding-bottom-1hrem {
+    padding-bottom: 0.5rem;
+}
+
+.padding-bottom-3qrem {
+    padding-bottom: 0.75rem;
+}
+
+.padding-bottom-1rem {
+    padding-bottom: 1rem;
+}
+
+.padding-bottom-2rem {
+    padding-bottom: 2rem;
+}
+
+.padding-bottom-3rem {
+    padding-bottom: 3rem;
+}
+
+.padding-bottom-4rem {
+    padding-bottom: 4rem;
+}
+
+.padding-top-1qrem {
+    padding-top: 0.25rem;
+}
+
+.padding-top-1hrem {
+    padding-top: 0.5rem;
+}
+
+.padding-top-3qrem {
+    padding-top: 0.75rem;
+}
+
+.padding-top-1rem {
+    padding-top: 1rem;
+}
+
+.padding-top-2rem {
+    padding-top: 2rem;
+}
+
+.padding-top-3rem {
+    padding-top: 3rem;
+}
+
+.padding-top-4rem {
+    padding-top: 4rem;
+}
+
+.color-fg {
+    color: var(--fg);
+}
+
+.background-color-fg {
+    background-color: var(--fg);
+}
+
+.color-bg {
+    color: var(--bg);
+}
+
+.background-color-bg {
+    background-color: var(--bg);
+}
+
+.color-accent {
+    color: var(--accent);
+}
+
+.background-color-accent {
+    background-color: var(--accent);
+}
+
+.color-err {
+    color: var(--err);
+}
+
+.background-color-err {
+    background-color: var(--err);
+}
+
+.color-bg-dark {
+    color: var(--bg-dark);
+}
+
+.background-color-bg-dark {
+    background-color: var(--bg-dark);
+}
+
+.color-ok {
+    color: var(--ok);
+}
+
+.background-color-ok {
+    background-color: var(--ok);
+}
+
+.color-accent-light {
+    color: var(--accent-light);
+}
+
+.background-color-accent-light {
+    background-color: var(--accent-light);
+}
+
+.font-size-1qrem {
+    font-size: 0.25rem;
+}
+
+.font-size-1hrem {
+    font-size: 0.5rem;
+}
+
+.font-size-3qrem {
+    font-size: 0.75rem;
+}
+
+.font-size-2rem {
+    font-size: 2rem;
+}
+
+.font-size-3rem {
+    font-size: 3rem;
+}
+
+.font-size-4rem {
+    font-size: 4rem;
+}
+
+.drop-shadow-0deg {
+    box-shadow: 0.25rem -0.25rem #202020;
+}
+
+.drop-shadow-90deg {
+    box-shadow: 0.25rem 0.25rem #202020;
+}
+
+.drop-shadow-180deg {
+    box-shadow: -0.25rem 0.25rem #202020;
+}
+
+.drop-shadow-270deg {
+    box-shadow: -0.25rem -0.25rem #202020;
+}
+
+.fixed {
+    position: fixed;
+}
+
+.relative {
+    position: relative;
+}
+
+.absolute {
+    position: absolute;
+}
+
+.static {
+    position: static;
+}
+
+.sticky {
+    position: sticky;
+}
+
+.flex {
+    display: flex;
+}
+
+.block {
+    display: block;
+}
+
+.inline-block {
+    display: inline-block;
+}
+
+.inline {
+    display: inline;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.flex-nowrap {
+    flex-wrap: nowrap;
+}
+
+.flex-column {
+    flex-direction: column;
+}
+
+.flex-row {
+    flex-direction: row;
+}
+
+.flex-column-reverse {
+    flex-direction: column-reverse;
+}
+
+.flex-row-reverse {
+    flex-direction: row-reverse;
+}
+
+.justify-content-center {
+    justify-content: center;
+}
+
+.justify-content-start {
+    justify-content: start;
+}
+
+.justify-content-end {
+    justify-content: end;
+}
+
+.justify-content-space-around {
+    justify-content: space-around;
+}
+
+.justify-content-space-between {
+    justify-content: space-between;
+}
+
+.justify-content-space-evenly {
+    justify-content: space-evenly;
+}
+
+.align-items-center {
+    align-items: center;
+}
+
+.align-items-start {
+    align-items: start;
+}
+
+.align-items-end {
+    align-items: end;
+}
+
+.align-items-space-around {
+    align-items: space-around;
+}
+
+.align-items-space-between {
+    align-items: space-between;
+}
+
+.align-items-space-evenly {
+    align-items: space-evenly;
+}
+
+.width-100vw {
+    width: 100vw;
+}
+
+.height-100vh {
+    height: 100vh;
+}

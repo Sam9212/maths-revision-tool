@@ -1,0 +1,22 @@
+[package]
+name = "maths-revision-tool-ui"
+version = "0.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[dependencies]
+chrono = "0.4.31"
+web-sys = { version = "0.3", features = ["Notification"]}
+yew = { git = "https://github.com/yewstack/yew.git", features = ["csr"] }
+yew-router = { git = "https://github.com/yewstack/yew.git" }
+tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = ["tauri", "dialog"] }
+serde = { version = "1.0", features = ["derive"] }
+db_manager = { path = "db_manager" }
+wasm-logger = "0.2.0"
+log = "0.4.20"
+
+[workspace]
+members = [
+    "src-tauri",
+    "db_manager",
+]
