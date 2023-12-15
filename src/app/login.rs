@@ -1,20 +1,23 @@
+use log::info;
 use yew::{prelude::*, platform::spawn_local};
 use yew_router::prelude::*;
-use serde::{Serialize, Deserialize};
 use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
 use yew_router::hooks::use_navigator;
 use tauri_sys::tauri::invoke;
-use db_manager::User;
+use db_manager::{
+    commands::{
+        FetchAllArgs, 
+        ValidateLoginArgs
+    },
+    User,
+};
 use crate::{
     app::Route,
-    components::{inputs::LengthValidationInput, user_ctx::UserCtx},
+    components::{
+        inputs::LengthValidationInput, 
+        user_ctx::UserCtx
+    },
 };
-
-#[derive(Serialize, Deserialize)]
-struct Payload {
-    username: String,
-    password: String,
-}
 
 #[function_component(Login)]
 pub fn login() -> Html {
@@ -48,21 +51,29 @@ pub fn login() -> Html {
     };
 
     let onclick = move |_| {
+
         let username = username.clone();
         let password = password.clone();
         let user_ctx = user_ctx.clone();
+        let navigator = navigator.clone();
 
         spawn_local(async move {
 
             let username = (*username).clone();
             let password = (*password).clone();
 
-            let valid_user: Option<User> = invoke("validate_login", &Payload { username, password }).await.unwrap();
-            user_ctx.dispatch(valid_user);
-
+            let result: Option<User> = invoke("validate_login", &ValidateLoginArgs { username, password }).await.unwrap();
+            if result.is_some() {
+                navigator.push(&Route::Dashboard);
+            }
+            user_ctx.dispatch(result);
         });
-        navigator.push(&Route::Dashboard);
     };
+
+    spawn_local(async move {
+        let users: Vec<User> = invoke("debug_fetch_all", &FetchAllArgs).await.unwrap();
+        info!("{:?}", users);
+    });
 
     html!{
         <div class={classes!("margin-1rem")}>

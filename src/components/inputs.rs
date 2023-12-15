@@ -26,13 +26,31 @@ pub struct LengthValidationInputProps {
 pub fn length_validation_input(props: &LengthValidationInputProps) -> Html {
     let LengthValidationInputProps { min_length, max_length, id, input_type, children, required, onchange, class, valid } = props.clone();
     let valid = if let Some(valid) = valid { *valid } else { true };
+    let mut label_style = String::new();
+    let mut input_style = String::new();
+    if !valid {
+        label_style.push_str("color: var(--err);");
+        input_style.push_str("border: 4px solid var(--err);");
+    } else {
+        label_style = String::new();
+        input_style = String::new();
+    }
+    /*
+        label:has(+ input[valid="false"]:not([type="date"])) {
+            color: var(--err);
+        }
+
+        input[valid="false"]:not([type="date"]) {
+            border: 4px solid var(--err);
+        }
+     */
     let maxlength = max_length.to_string();
     
     let onfocusout = move |e: FocusEvent| {
         let ele = e.target().and_then(|t| t.dyn_into::<HtmlInputElement>().ok());
         if let Some(ele) = ele {
             let len = ele.value().len();
-            if len < min_length || len > max_length || !valid {
+            if len < min_length || len > max_length {
                 ele.set_attribute("valid", "false").expect("error setting valid status");
             } else {
                 ele.set_attribute("valid", "true").expect("error setting valid status");
@@ -48,8 +66,8 @@ pub fn length_validation_input(props: &LengthValidationInputProps) -> Html {
 
     html!{
         <div {class}>
-            <label for={id.clone()}>{ children }</label>
-            <input type={input_type} name={id.clone()} {id} {required} {maxlength} {onchange} {onfocusout}/>
+            <label style={label_style} for={id.clone()}>{ children }</label>
+            <input style={input_style} type={input_type} name={id.clone()} {id} {required} {maxlength} {onchange} {onfocusout}/>
         </div>
     }
 }

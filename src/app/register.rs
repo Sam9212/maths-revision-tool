@@ -1,10 +1,10 @@
 use chrono::Utc;
 use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
-use serde::{Serialize, Deserialize};
 use yew::{prelude::*, platform::spawn_local};
 use log::info;
 use db_manager::{
     User, AccessLevel,
+    commands::AddUserArgs,
 };
 use tauri_sys::tauri::invoke;
 use yew_router::hooks::use_navigator;
@@ -20,10 +20,8 @@ use crate::{
 pub fn register() -> Html {
 
     let username = use_state_eq(|| String::new());
-    let username_valid = use_state_eq(|| true);
 
     let password = use_state_eq(|| String::new());
-    let password_valid = use_state_eq(|| true);
 
     let confirmation = use_state_eq(|| String::new());
     let confirmation_valid = use_state_eq(|| true);
@@ -48,13 +46,20 @@ pub fn register() -> Html {
 
     let onchange_password = {
         let password = password.clone();
+        let confirmation = confirmation.clone();
+        let confirmation_valid = confirmation_valid.clone();
+
         move |e: Event| {
-            password.set(
-                e.target()
-                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .expect("Input Element Failed To Cast")
-                    .value()
-            );
+            let new_val = e.target()
+                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
+                .expect("Input Element Failed To Cast")
+                .value();
+
+            info!("new_val = {}, *confirmation = {}", new_val, *confirmation);
+            info!("new_val == *confirmation = {}", new_val == *confirmation);
+            
+            confirmation_valid.set(new_val == *confirmation);
+            password.set(new_val);
         }
     };
 
@@ -64,19 +69,16 @@ pub fn register() -> Html {
         let confirmation_valid = confirmation_valid.clone();
 
         move |e: Event| {
-            let element = e.target()
+            let new_val = e.target()
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .expect("Input Element Failed To Cast");
+                .expect("Input Element Failed To Cast")
+                .value();
 
-            confirmation.set(
-                e.target()
-                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .expect("Input Element Failed To Cast")
-                    .value()
-            );
-
-            info!("*password = {}, *confirmation = {}", *password, *confirmation);
-            confirmation_valid.set(*password == *confirmation);
+            info!("*password = {}, new_val = {}", *password, new_val);
+            info!("*password == new_val = {}", *password == new_val);
+            
+            confirmation_valid.set(*password == new_val);
+            confirmation.set(new_val);
         }
     };
 
@@ -108,15 +110,8 @@ pub fn register() -> Html {
             }
 
             let user = User::new(username.clone(), password.clone(), date.clone(), AccessLevel::USER);
-
-            #[allow(non_snake_case)]
-            #[derive(Serialize, Deserialize)]
-            struct Payload {
-                newUser: User,
-            }
-
             spawn_local(async move {
-                invoke::<_, ()>("add_user", &Payload { newUser: user }).await.unwrap();
+                invoke::<_, ()>("add_user", &AddUserArgs { newUser: user }).await.unwrap();
             });
             nav.push(&Login);
         }
@@ -132,12 +127,12 @@ pub fn register() -> Html {
         <div class={classes!("margin-1rem")}>
             <h1 class={classes!("margin-bottom-1rem")}>{ "Register" }</h1>
             // This is a component that I created, its definitionesduio
-            <LengthValidationInput valid={username_valid} onchange={onchange_username} class={classes!("margin-bottom-1qrem")} id={"username"} min_length={3} max_length={20} required={true}>
+            <LengthValidationInput onchange={onchange_username} class={classes!("margin-bottom-1qrem")} id={"username"} min_length={3} max_length={20} required={true}>
                 { "Username" }
             </LengthValidationInput>
             <p style={"font-size: 0.75rem;"} class={classes!("margin-bottom-1rem")}>{ "*A valid username is between 3 and 20 characters" }</p>
 
-            <LengthValidationInput valid={password_valid} input_type={"password"} onchange={onchange_password} class={classes!("margin-bottom-1qrem")} id={"password"} min_length={8} max_length={20} required={true}>
+            <LengthValidationInput input_type={"password"} onchange={onchange_password} class={classes!("margin-bottom-1qrem")} id={"password"} min_length={8} max_length={20} required={true}>
                 { "Password" }
             </LengthValidationInput>
             <p style={"font-size: 0.75rem;"} class={classes!("margin-bottom-1rem")}>{ "*A valid password is between 8 and 20 characters" }</p>

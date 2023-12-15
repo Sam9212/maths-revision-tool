@@ -57,11 +57,24 @@ pub fn ctx_bar() -> Html {
 
     let ctx = use_context::<UseReducerHandle<UserCtx>>().expect("Couldn't Get User Context");
     let user = (*ctx).clone();
+    let nav = use_navigator().expect("Couldn't get the nav handle");
+
+    let onclick = {
+        let ctx = ctx.clone();
+        let nav = nav.clone();
+
+        move |e: MouseEvent| {
+            e.prevent_default();
+            ctx.dispatch(None);
+            nav.push(&Route::Login);
+        }
+    };
+
     html!{
         <div {class}>
             if let Some(user) = user.inner {
                 <p>{ "Logged in as " }{ user.username() }</p>
-                <Link<Route> to={Route::Login}>{ "Log out" }</Link<Route>>
+                <a {onclick}>{ "Log out" }</a>
             } else {
                 <p>{ "Not Logged In!" }</p>
                 <Link<Route> to={Route::Login}>{ "Log in" }</Link<Route>>
