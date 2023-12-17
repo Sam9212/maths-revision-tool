@@ -16,13 +16,20 @@ use std::{
     fmt::Display,
 };
 
-#[derive(Debug)]
+use serde::{
+    Serialize, 
+    Deserialize
+};
+
+
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct UserReqError {
     kind: UserReqErrorKind,
     message: &'static str,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum UserReqErrorKind {
     InvalidDetails,
     AccountLocked,

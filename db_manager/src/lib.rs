@@ -39,7 +39,7 @@ pub enum AccessLevel {
 }
 
 impl User {
-    /// The (effective) constructor of the [`User`] class.
+    /// The (effective) constructor for the [`User`] struct.
     /// 
     /// This function simply takes in arguments to set the fields of a new instance of
     /// the class, returning that new instance to the caller. It does do a minor amount
