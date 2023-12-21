@@ -8,7 +8,7 @@ edition = "2021"
 chrono = "0.4.31"
 web-sys = { version = "0.3"}
 yew = { git = "https://github.com/yewstack/yew.git", features = ["csr"] }
-tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = ["tauri"] }
+tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = ["tauri", "dialog"] }
 yew-router = { git = "https://github.com/yewstack/yew.git" }
 db_manager = { path = "db_manager" }
 wasm-logger = "0.2.0"

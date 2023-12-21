@@ -155,7 +155,7 @@ impl DatabaseManager {
         let query = doc! { "username": username };
         let opt_user = self.get_users().find_one(query.clone(), None).map_err(|_| UserReqError::new(ConnectionError, "Could not fetch user".into()))?;
         let user = opt_user.ok_or(UserReqError::new(InvalidDetails, "The username or password was incorrect.".into()))?;
-        if user.strikes() > 3 {
+        if user.strikes() >= 3 {
             Err(UserReqError::new(AccountLocked, "The attempts exceeded 3".into()))
         } else if user.password() == &password {
             let update = doc! {

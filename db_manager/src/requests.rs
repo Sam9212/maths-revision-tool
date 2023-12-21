@@ -26,7 +26,7 @@ use serde::{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserReqError {
     kind: UserReqErrorKind,
-    message: String,
+    pub message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

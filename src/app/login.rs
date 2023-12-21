@@ -5,6 +5,10 @@ use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
 use yew_router::hooks::use_navigator;
 use tauri_sys::{
     tauri::invoke,
+    dialog::{
+        MessageDialogBuilder,
+        MessageDialogKind,
+    },
     Error,
 };
 use db_manager::{
@@ -71,7 +75,13 @@ pub fn login() -> Html {
                 },
                 Err(why) => {
                     if let Error::Command(s) = why {
-                        log::info!("{:?}", UserReqError::from(s));
+                        let why: UserReqError = s.into();
+                        let dialog = MessageDialogBuilder::new()
+                            .set_title("Login")
+                            .set_kind(MessageDialogKind::Error)
+                            .message(&why.message)
+                            .await;
+
                         user_ctx.dispatch(None);
                     }
                 }
