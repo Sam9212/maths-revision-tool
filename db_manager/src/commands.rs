@@ -19,6 +19,3 @@ pub struct ValidateLoginArgs {
     pub username: String,
     pub password: String,
 }
-
-#[derive(Serialize)]
-pub struct FetchAllArgs;

@@ -9,7 +9,7 @@ pub mod database;
 
 use database::DatabaseManager;
 use db_manager::{User, requests::UserReqError};
-use mongodb::bson::Bson;
+use mongodb::bson::oid::ObjectId;
 use once_cell::sync::Lazy;
 
 static DBM: Lazy<DatabaseManager> = Lazy::new(|| DatabaseManager::connect().expect("Connection to database failed!"));
@@ -26,28 +26,21 @@ static DBM: Lazy<DatabaseManager> = Lazy::new(|| DatabaseManager::connect().expe
 /// the user is locked out, adding and resetting login attempts depending on whether or not the
 /// login attempt was succesful, and of course, returning all of the final states of this process.
 #[tauri::command]
-fn validate_login(username: &str, password: &str) -> Result<User, UserReqError> {
+fn validate_login(username: String, password: String) -> Result<User, UserReqError> {
     DBM.validate_login(username, password)
 }
 
-/// This command also wraps the DatabaseManager struct's call to the `add_user` method, ignoring the 
-/// potential error states for now. In the next iteration I will begin to develop the use of the rich
-/// error system that i've created the foundations for as it will stand me in good stead for the 
-/// safety and consistency of the program. 
 #[tauri::command]
-fn add_user(new_user: User) -> Result<Bson, UserReqError> {
+fn add_user(new_user: User) -> Result<(), UserReqError> {
     DBM.add_user(new_user)
 }
 
-/// This is a debugging command that returns all valid responses from a query to the entire `users`
-/// collection in the Mongo database. It makes use of the simple DatabaseManager API that I created
-/// to get a handle to the Users collection and run a query with no filter on it.
 #[tauri::command]
-fn debug_fetch_all() -> Vec<User> {
+fn debug_fetch_all() {
     // filter_map is a special iterator transformation function that applies a mutating function to
     // all elements of an iterator and filters out any None values from the resulting `Option<T>`
     // that is returned in each map pass.
-    DBM.get_users().find(None, None).unwrap().filter_map(|f| f.ok()).collect()
+    println!("{:?}", DBM.get_users().find(None, None).unwrap().collect::<Vec<Result<_, _>>>());
 }
 
 /// This is the starting point of the backend. It creates a `Builder` object

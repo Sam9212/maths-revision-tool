@@ -1,15 +1,20 @@
 use chrono::Utc;
 use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
-use yew::{prelude::*, platform::spawn_local};
-use log::info;
+use yew::{
+    prelude::*, 
+    platform::spawn_local,
+};
 use db_manager::{
     User, AccessLevel,
-    commands::AddUserArgs,
+    requests::UserReqError, commands::AddUserArgs,
 };
-use tauri_sys::tauri::invoke;
+use tauri_sys::{
+    tauri::invoke,
+    Error
+};
 use yew_router::hooks::use_navigator;
 use crate::{
-    app::Route::Login, 
+    app::Route, 
     components::inputs::{
         LengthValidationInput,
         DateInput,
@@ -25,6 +30,7 @@ pub fn register() -> Html {
 
     let confirmation = use_state_eq(|| String::new());
     let confirmation_valid = use_state_eq(|| true);
+    let confirmation_reason = use_state_eq(|| String::new());
 
     let date = use_state_eq(|| Utc::now().format("%Y-%m-%d").to_string());
 
@@ -48,6 +54,7 @@ pub fn register() -> Html {
         let password = password.clone();
         let confirmation = confirmation.clone();
         let confirmation_valid = confirmation_valid.clone();
+        let confirmation_reason = confirmation_reason.clone();
 
         move |e: Event| {
             let new_val = e.target()
@@ -55,10 +62,12 @@ pub fn register() -> Html {
                 .expect("Input Element Failed To Cast")
                 .value();
 
-            info!("new_val = {}, *confirmation = {}", new_val, *confirmation);
-            info!("new_val == *confirmation = {}", new_val == *confirmation);
+            // info!("new_val = {}, *confirmation = {}", new_val, *confirmation);
+            // info!("new_val == *confirmation = {}", new_val == *confirmation);
             
-            confirmation_valid.set(new_val == *confirmation);
+            let validity = new_val == *confirmation;
+            confirmation_valid.set(validity);
+            confirmation_reason.set(if !validity { "Passwords don't match!".to_string() } else { String::new() });
             password.set(new_val);
         }
     };
@@ -67,6 +76,7 @@ pub fn register() -> Html {
         let password = password.clone();
         let confirmation = confirmation.clone();
         let confirmation_valid = confirmation_valid.clone();
+        let confirmation_reason = confirmation_reason.clone();
 
         move |e: Event| {
             let new_val = e.target()
@@ -74,10 +84,13 @@ pub fn register() -> Html {
                 .expect("Input Element Failed To Cast")
                 .value();
 
-            info!("*password = {}, new_val = {}", *password, new_val);
-            info!("*password == new_val = {}", *password == new_val);
+            // info!("*password = {}, new_val = {}", *password, new_val);
+            // info!("*password == new_val = {}", *password == new_val);
             
-            confirmation_valid.set(*password == new_val);
+
+            let validity = *password == new_val;
+            confirmation_reason.set(if !validity { "Passwords don't match!".to_string() } else { String::new() });
+            confirmation_valid.set(validity);
             confirmation.set(new_val);
         }
     };
@@ -103,17 +116,23 @@ pub fn register() -> Html {
         let nav = nav.clone();
 
         move |_| {
-            info!("\nconfirmation = {confirmation}\npassword = {password}");
             if confirmation != password {
-                info!("They aren't equal!!!");
                 return;
             }
 
             let user = User::new(username.clone(), password.clone(), date.clone(), AccessLevel::USER);
             spawn_local(async move {
-                invoke::<_, ()>("add_user", &AddUserArgs { newUser: user }).await.unwrap();
+                let res: Result<(), _> = invoke("add_user", &AddUserArgs { newUser: user }).await;
+                match res {
+                    Ok(_) => {},
+                    Err(why) => {
+                        if let Error::Command(s) = why {
+                            log::info!("{}", s);
+                        }
+                    }
+                }
             });
-            nav.push(&Login);
+            nav.push(&Route::Login);
         }
     };
 
@@ -126,7 +145,6 @@ pub fn register() -> Html {
         // does not mess up the layout.
         <div class={classes!("margin-1rem")}>
             <h1 class={classes!("margin-bottom-1rem")}>{ "Register" }</h1>
-            // This is a component that I created, its definitionesduio
             <LengthValidationInput onchange={onchange_username} class={classes!("margin-bottom-1qrem")} id={"username"} min_length={3} max_length={20} required={true}>
                 { "Username" }
             </LengthValidationInput>
@@ -137,7 +155,7 @@ pub fn register() -> Html {
             </LengthValidationInput>
             <p style={"font-size: 0.75rem;"} class={classes!("margin-bottom-1rem")}>{ "*A valid password is between 8 and 20 characters" }</p>
 
-            <LengthValidationInput valid={confirmation_valid} input_type={"password"} onchange={onchange_confirmation} class={classes!("margin-bottom-1rem")} id={"confirmation"} min_length={8} max_length={20} required={true}>
+            <LengthValidationInput valid={confirmation_valid} valid_reason={confirmation_reason} input_type={"password"} onchange={onchange_confirmation} class={classes!("margin-bottom-1rem")} id={"confirmation"} min_length={8} max_length={20} required={true}>
                 { "Confirm Password" }
             </LengthValidationInput>
 

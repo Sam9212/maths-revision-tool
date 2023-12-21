@@ -20,12 +20,15 @@ pub struct LengthValidationInputProps {
     pub class: Classes,
     #[prop_or(None)]
     pub valid: Option<UseStateHandle<bool>>,
+    #[prop_or(None)]
+    pub valid_reason: Option<UseStateHandle<String>>,
 }
 
 #[function_component(LengthValidationInput)]
 pub fn length_validation_input(props: &LengthValidationInputProps) -> Html {
-    let LengthValidationInputProps { min_length, max_length, id, input_type, children, required, onchange, class, valid } = props.clone();
+    let LengthValidationInputProps { min_length, max_length, id, input_type, children, required, onchange, class, valid, valid_reason, } = props.clone();
     let valid = if let Some(valid) = valid { *valid } else { true };
+    let valid_reason = if let Some(valid_reason) = valid_reason { (*valid_reason).clone() } else { String::new() };
     let mut label_style = String::new();
     let mut input_style = String::new();
     if !valid {
@@ -43,7 +46,7 @@ pub fn length_validation_input(props: &LengthValidationInputProps) -> Html {
         input[valid="false"]:not([type="date"]) {
             border: 4px solid var(--err);
         }
-     */
+    */
     let maxlength = max_length.to_string();
     
     let onfocusout = move |e: FocusEvent| {
@@ -68,6 +71,9 @@ pub fn length_validation_input(props: &LengthValidationInputProps) -> Html {
         <div {class}>
             <label style={label_style} for={id.clone()}>{ children }</label>
             <input style={input_style} type={input_type} name={id.clone()} {id} {required} {maxlength} {onchange} {onfocusout}/>
+            if !valid {
+                <p style={"font-size: 0.75rem;"} class={classes!("margin-bottom-1rem")}>{ valid_reason }</p>
+            }
         </div>
     }
 }

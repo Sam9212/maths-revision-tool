@@ -26,7 +26,7 @@ use serde::{
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserReqError {
     kind: UserReqErrorKind,
-    message: &'static str,
+    message: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,9 +47,16 @@ impl Display for UserReqError {
 
 impl Error for UserReqError {}
 
+impl From<String> for UserReqError {
+    fn from(value: String) -> Self {
+        let obj = &value[15..value.len()-2];
+        serde_json::from_str(obj).unwrap()
+    }
+}
+
 impl UserReqError {
     /// The (effective) constructor method for the Error struct.
-    pub fn new(kind: UserReqErrorKind, message: &'static str) -> Self {
+    pub fn new(kind: UserReqErrorKind, message: String) -> Self {
         Self { kind, message }
     }
 }

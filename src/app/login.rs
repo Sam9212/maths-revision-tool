@@ -3,12 +3,13 @@ use yew::{prelude::*, platform::spawn_local};
 use yew_router::prelude::*;
 use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
 use yew_router::hooks::use_navigator;
-use tauri_sys::tauri::invoke;
+use tauri_sys::{
+    tauri::invoke,
+    Error,
+};
 use db_manager::{
-    commands::{
-        FetchAllArgs, 
-        ValidateLoginArgs
-    },
+    requests::UserReqError,
+    commands::ValidateLoginArgs,
     User,
 };
 use crate::{
@@ -62,17 +63,24 @@ pub fn login() -> Html {
             let username = (*username).clone();
             let password = (*password).clone();
 
-            let result: Option<User> = invoke("validate_login", &ValidateLoginArgs { username, password }).await.unwrap();
-            if result.is_some() {
-                navigator.push(&Route::Dashboard);
+            let result: Result<User, _> = invoke("validate_login", &ValidateLoginArgs { username, password }).await;
+            match result {
+                Ok(user) => {
+                    user_ctx.dispatch(Some(user));
+                    navigator.push(&Route::Dashboard)
+                },
+                Err(why) => {
+                    if let Error::Command(s) = why {
+                        log::info!("{:?}", UserReqError::from(s));
+                        user_ctx.dispatch(None);
+                    }
+                }
             }
-            user_ctx.dispatch(result);
         });
     };
 
     spawn_local(async move {
-        let users: Vec<User> = invoke("debug_fetch_all", &FetchAllArgs).await.unwrap();
-        info!("{:?}", users);
+        let _: () = invoke("debug_fetch_all", &()).await.unwrap();
     });
 
     html!{

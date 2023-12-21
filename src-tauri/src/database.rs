@@ -16,13 +16,16 @@ use mongodb::{
         Database,
         Collection,
     },
-    bson::{doc, Bson},
+    bson::{ 
+        oid::ObjectId,
+        doc,
+    },
 };
 
 use db_manager::{
     requests::{
-        UserReqError,
         UserReqErrorKind::*,
+        UserReqError,
     },
     User,
 };
@@ -55,7 +58,7 @@ impl DatabaseManager {
     /// of type `Self` is returned, which is an alias for the type
     /// mentioned at the start of the `impl` block.
     pub fn connect() -> Result<Self, UserReqError> {
-        let client = Client::with_uri_str("mongodb://localhost:27017").map_err(|_| UserReqError::new(ConnectionError, "Could not initialize MongoDB connection!"))?;
+        let client = Client::with_uri_str("mongodb://localhost:27017").map_err(|_| UserReqError::new(ConnectionError, "Could not initialize MongoDB connection!".into()))?;
         let db = client.database("maths-revision-tool");
         Ok(Self { /*client,*/ db })
     }
@@ -148,13 +151,13 @@ impl DatabaseManager {
     /// error state as well. The message for each is to be
     /// directly consumed by the frontend to display in a modal
     /// box.
-    pub fn validate_login(&self, username: &str, password: &str) -> Result<User, UserReqError> {
+    pub fn validate_login(&self, username: String, password: String) -> Result<User, UserReqError> {
         let query = doc! { "username": username };
-        let opt_user = self.get_users().find_one(query.clone(), None).map_err(|_| UserReqError::new(ConnectionError, "Could not fetch user"))?;
-        let user = opt_user.ok_or(UserReqError::new(InvalidDetails, "The username or password was incorrect."))?;
+        let opt_user = self.get_users().find_one(query.clone(), None).map_err(|_| UserReqError::new(ConnectionError, "Could not fetch user".into()))?;
+        let user = opt_user.ok_or(UserReqError::new(InvalidDetails, "The username or password was incorrect.".into()))?;
         if user.strikes() > 3 {
-            Err(UserReqError::new(AccountLocked, "The attempts exceeded 3"))
-        } else if user.password() == password {
+            Err(UserReqError::new(AccountLocked, "The attempts exceeded 3".into()))
+        } else if user.password() == &password {
             let update = doc! {
                 "$set" : doc! {
                     "strikes": 0
@@ -176,7 +179,7 @@ impl DatabaseManager {
                 .update_one(query, update, None)
                 .expect("Strike Add Failed.");
 
-            Err(UserReqError::new(InvalidDetails, "The username or password was incorrect."))
+            Err(UserReqError::new(InvalidDetails, "The username or password was incorrect.".into()))
         }
     }
 
@@ -194,9 +197,9 @@ impl DatabaseManager {
     /// type provided by the MongoDB driver is not a suitable
     /// target for Serialization which means it cannot be
     /// transported to the frontend.
-    pub fn add_user(&self, new_user: User) -> Result<Bson, UserReqError> {
+    pub fn add_user(&self, new_user: User) -> Result<(), UserReqError> {
         self.get_users().insert_one(new_user, None)
-            .map(|ok| ok.inserted_id)
-            .map_err(|_| UserReqError::new(AddUserError, "Could not add user object to database"))
+            .map(|_| ())
+            .map_err(|_| UserReqError::new(AddUserError, "Could not add user object to database".into()))
     }
 }
