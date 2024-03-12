@@ -49,7 +49,7 @@ pub fn user_context_provider(props: &UserContextProviderProps) -> Html {
 }
 
 #[function_component(ContextBar)]
-pub fn ctx_bar() -> Html {
+pub fn context_bar() -> Html {
     let class = classes!(
         "padding-1hrem", "background-color-bg-dark",
         "flex", "justify-content-space-between",

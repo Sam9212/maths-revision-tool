@@ -1,29 +1,20 @@
-use chrono::Utc;
-use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
-use yew::{
-    prelude::*, 
-    platform::spawn_local,
-};
-use db_manager::{
-    User, AccessLevel,
-    requests::UserReqError, commands::AddUserArgs,
-};
-use tauri_sys::{
-    tauri::invoke,
-    Error
-};
-use yew_router::hooks::use_navigator;
 use crate::{
-    app::Route, 
-    components::inputs::{
-        LengthValidationInput,
-        DateInput,
-    }
+    app::Route,
+    components::inputs::{DateInput, LengthValidationInput},
 };
+use chrono::Utc;
+use db_manager::{commands::AddUserArgs, requests::UserReqError, AccessLevel, User};
+use tauri_sys::{
+    dialog::{MessageDialogBuilder, MessageDialogKind},
+    tauri::invoke,
+    Error,
+};
+use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
+use yew::{platform::spawn_local, prelude::*};
+use yew_router::hooks::use_navigator;
 
 #[function_component(Register)]
 pub fn register() -> Html {
-
     let username = use_state_eq(|| String::new());
 
     let password = use_state_eq(|| String::new());
@@ -36,8 +27,6 @@ pub fn register() -> Html {
 
     let nav = use_navigator().unwrap();
 
-
-
     let onchange_username = {
         let username = username.clone();
         move |e: Event| {
@@ -45,7 +34,7 @@ pub fn register() -> Html {
                 e.target()
                     .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                     .expect("Input Element Failed To Cast")
-                    .value()
+                    .value(),
             );
         }
     };
@@ -57,17 +46,19 @@ pub fn register() -> Html {
         let confirmation_reason = confirmation_reason.clone();
 
         move |e: Event| {
-            let new_val = e.target()
+            let new_val = e
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .expect("Input Element Failed To Cast")
                 .value();
 
-            // info!("new_val = {}, *confirmation = {}", new_val, *confirmation);
-            // info!("new_val == *confirmation = {}", new_val == *confirmation);
-            
             let validity = new_val == *confirmation;
             confirmation_valid.set(validity);
-            confirmation_reason.set(if !validity { "Passwords don't match!".to_string() } else { String::new() });
+            confirmation_reason.set(if !validity {
+                "Passwords don't match!".to_string()
+            } else {
+                String::new()
+            });
             password.set(new_val);
         }
     };
@@ -79,17 +70,21 @@ pub fn register() -> Html {
         let confirmation_reason = confirmation_reason.clone();
 
         move |e: Event| {
-            let new_val = e.target()
+            let new_val = e
+                .target()
                 .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                 .expect("Input Element Failed To Cast")
                 .value();
 
             // info!("*password = {}, new_val = {}", *password, new_val);
             // info!("*password == new_val = {}", *password == new_val);
-            
 
             let validity = *password == new_val;
-            confirmation_reason.set(if !validity { "Passwords don't match!".to_string() } else { String::new() });
+            confirmation_reason.set(if !validity {
+                "Passwords don't match!".to_string()
+            } else {
+                String::new()
+            });
             confirmation_valid.set(validity);
             confirmation.set(new_val);
         }
@@ -102,13 +97,12 @@ pub fn register() -> Html {
                 e.target()
                     .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
                     .expect("Input Element Failed to Cast")
-                    .value()
+                    .value(),
             )
         }
     };
-    
+
     let onclick = {
-        
         let username = (*username).clone();
         let password = (*password).clone();
         let confirmation = (*confirmation).clone();
@@ -120,14 +114,24 @@ pub fn register() -> Html {
                 return;
             }
 
-            let user = User::new(username.clone(), password.clone(), date.clone(), AccessLevel::USER);
+            let user = User::new(
+                username.clone(),
+                password.clone(),
+                date.clone(),
+                AccessLevel::USER,
+            );
             spawn_local(async move {
                 let res: Result<(), _> = invoke("add_user", &AddUserArgs { newUser: user }).await;
                 match res {
-                    Ok(_) => {},
+                    Ok(_) => {}
                     Err(why) => {
                         if let Error::Command(s) = why {
-                            log::info!("{}", s);
+                            let why: UserReqError = s.into();
+                            let _ = MessageDialogBuilder::new()
+                                .set_title("Registration")
+                                .set_kind(MessageDialogKind::Error)
+                                .message(&why.message)
+                                .await;
                         }
                     }
                 }
@@ -139,7 +143,7 @@ pub fn register() -> Html {
     html! {
         // Every page needs this outer div. It does not necessarily need any classes,
         // however I find it appropriate to add some spacing around the edges of the
-        // screen. While Yew does allow me to 'shard' - which allows more than 1 root 
+        // screen. While Yew does allow me to have more than 1 root
         // element in an `html! macro, I still need to nest other components inside
         // of this 1 root component so that the flex spacing of the UserContext bar
         // does not mess up the layout.

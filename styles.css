@@ -72,7 +72,7 @@ a:hover {
   color: var(--accent-light);
 }
 
-input[type="password"]::-ms-reveal,
+/* input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-check {
   display: none !important;
 }
@@ -126,4 +126,4 @@ label:has(+ input[valid="false"]:not([type="date"])) {
 
 input[valid="false"]:not([type="date"]) {
   border: 4px solid var(--err);
-}
+} */

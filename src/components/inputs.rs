@@ -1,4 +1,7 @@
-use yew::prelude::*;
+use db_manager::User;
+use tauri_sys::tauri::invoke;
+use yew::{prelude::*, suspense::use_future};
+use yew_autoprops::autoprops;
 use chrono::Utc;
 use web_sys::{
     HtmlInputElement,
@@ -80,6 +83,7 @@ pub fn length_validation_input(props: &LengthValidationInputProps) -> Html {
 
 #[derive(Properties, PartialEq, Clone)]
 pub struct DateInputProps {
+    #[prop_or(Classes::new())]
     pub class: Classes,
     pub children: Children,
     pub id: AttrValue,
@@ -98,5 +102,42 @@ pub fn date_input(props: &DateInputProps) -> Html {
             <label for={id.clone()}>{ children }</label>
             <input type={"date"} {onchange} name={id.clone()} {id} min={"1990-01-01"} max={now.to_string()}/>
         </div>
+    }
+}
+
+#[autoprops]
+#[function_component(Dropdown)]
+pub fn dropdown(children: &Children, id: AttrValue, onchange: Callback<Event>) -> Html {
+    html!{
+        <>
+            <label for={id.clone()}>{ children }</label>
+            <select name={id.clone()} {id} {onchange}>
+                <option value="User">{ "User" }</option>
+                <option value="Teacher">{ "Teacher" }</option>
+                <option value="Admin">{ "Administrator" }</option>
+            </select>
+        </>
+    }
+}
+
+#[autoprops]
+#[function_component(UserPicker)]
+pub fn user_picker(children: &Children, id: AttrValue, onchange: Callback<Event>) -> Html {
+    let unames = use_future(|| async { invoke::<_, Vec<User>>("all_usernames", &()).await.unwrap() });
+    if unames.is_err() {
+        return html!{ unames.err().unwrap() }
+    }
+    
+    let options = (*unames.unwrap()).clone().into_iter().map(|v| {
+        let un = v.username();
+        html!{ <option value={un.clone()}>{un}</option>}
+    }).collect::<Html>();
+
+
+    html!{
+        <>
+            <label for={id.clone()}>{ children }</label>
+            <select name={id.clone()} {id} {onchange}>{ options }</select>
+        </>
     }
 }
