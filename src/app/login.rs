@@ -1,70 +1,53 @@
 use crate::{
     app::Route,
-    components::{inputs::LengthValidationInput, user_ctx::UserCtx},
+    components::{
+        inputs::{Button, ValidatedInput},
+        layout::Column,
+        theme_ctx::use_theme,
+        user_ctx::use_user,
+    },
 };
-use db_manager::{commands::ValidateLoginArgs, requests::UserReqError, User};
+use stylist::yew::styled_component;
 use tauri_sys::{
     dialog::{MessageDialogBuilder, MessageDialogKind},
     tauri::invoke,
-    Error,
 };
-use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*};
 use yew_router::hooks::use_navigator;
 use yew_router::prelude::*;
 
-#[function_component(Login)]
+#[styled_component(Login)]
 pub fn login() -> Html {
-    let username = use_state(|| String::new());
-    let password = use_state(|| String::new());
-    let navigator = use_navigator().expect("Couldn't find the navigator handle!");
-    let user_ctx: UseReducerHandle<UserCtx> =
-        use_context().expect("Couldn't find the user context!");
+    let username = use_state_eq(|| AttrValue::from(String::new()));
+    let username_valid = use_state_eq(|| false);
+    let password = use_state_eq(|| AttrValue::from(String::new()));
+    let password_valid = use_state_eq(|| false);
 
-    let onchange_username = {
-        let username = username.clone();
-        move |e: Event| {
-            username.set(
-                e.target()
-                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .expect("Input Element Failed To Cast")
-                    .value(),
-            );
-        }
-    };
+    let nav = use_navigator().expect("Couldn't find the navigator handle!");
+    let user_ctx = use_user();
 
-    let onchange_password = {
-        let password = password.clone();
-        move |e: Event| {
-            password.set(
-                e.target()
-                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .expect("Input Element Failed To Cast")
-                    .value(),
-            );
-        }
-    };
-
-    let onclick = move |_| {
+    let onclick = {
         let username = username.clone();
         let password = password.clone();
-        let user_ctx = user_ctx.clone();
-        let navigator = navigator.clone();
 
-        spawn_local(async move {
+        move |_| {
             let username = (*username).clone();
             let password = (*password).clone();
+            let user_ctx = user_ctx.clone();
+            let nav = nav.clone();
 
-            let result: Result<User, _> =
-                invoke("validate_login", &ValidateLoginArgs { username, password }).await;
-            match result {
-                Ok(user) => {
-                    user_ctx.dispatch(Some(user));
-                    navigator.push(&Route::Dashboard)
-                }
-                Err(why) => {
-                    if let Error::Command(s) = why {
-                        let why: UserReqError = s.into();
+            spawn_local(async move {
+                match crate::commands::invoke_validate_login(
+                    username.to_string(),
+                    password.to_string(),
+                )
+                .await
+                {
+                    Ok(user) => {
+                        user_ctx.dispatch(Some(user));
+                        nav.push(&Route::Dashboard);
+                    }
+                    Err(why) => {
                         let _ = MessageDialogBuilder::new()
                             .set_title("Login")
                             .set_kind(MessageDialogKind::Error)
@@ -74,25 +57,38 @@ pub fn login() -> Html {
                         user_ctx.dispatch(None);
                     }
                 }
-            }
-        });
+            });
+        }
     };
 
     spawn_local(async move {
         let _: () = invoke("debug_fetch_all", &()).await.unwrap();
     });
 
+    let theme = use_theme();
+    let class = css!(
+        r#"
+            background-color: ${bg};
+            padding: ${fs};
+
+            h1 {
+                margin-bottom: calc( 0.5 * ${fs} );
+            }
+        "#,
+        bg = theme.bg_color,
+        fs = theme.font_size,
+    );
+
     html! {
-        <div class={classes!("margin-1rem")}>
-            <h1 class={classes!("margin-bottom-1rem")}>{ "Maths Login" }</h1>
-            <LengthValidationInput class={classes!("margin-bottom-1rem")} onchange={onchange_username} id={"username"} min_length={3} max_length={20} required={true}>
-                { "Username" }
-            </LengthValidationInput>
-            <LengthValidationInput input_type={"password"} class={classes!("margin-bottom-1rem")} onchange={onchange_password} id={"password"} min_length={8} max_length={20} required={true}>
-                { "Password" }
-            </LengthValidationInput>
-            <button class={classes!("margin-bottom-1rem")} type={"submit"} {onclick}>{ "Login" }</button>
-            <p>{"New User? "}<Link<Route> to={Route::Register}>{ "Register" }</Link<Route>></p>
-        </div>
+        <Column justify_content={"center"} align_items={"center"} wfill={true} hfill={true}>
+            <Column justify_content={"center"} align_items={"center"} {class}>
+                <h1>{ "Maths Login" }</h1>
+                <ValidatedInput text_handle={username} validity_handle={username_valid.clone()} id={"username"}>{ "Username" }</ValidatedInput>
+                <ValidatedInput text_handle={password} validity_handle={password_valid.clone()} id={"password"} minl={8} hidden={true}>{ "Password" }</ValidatedInput>
+                <br />
+                <Button {onclick} clickable={*username_valid && *password_valid}>{ "Login" }</Button>
+                <p>{"New User? "}<Link<Route> to={Route::Register}>{ "Register" }</Link<Route>></p>
+            </Column>
+        </Column>
     }
 }

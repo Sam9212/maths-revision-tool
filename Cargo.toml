@@ -8,16 +8,17 @@ edition = "2021"
 chrono = "0.4.31"
 web-sys = { version = "0.3.68", features = ["HtmlSelectElement"] }
 yew = { version = "0.21", features = ["csr"] }
-tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = ["tauri", "dialog"] }
+tauri-sys = { git = "https://github.com/JonasKruckenberg/tauri-sys", features = [
+    "tauri",
+    "dialog",
+] }
 yew-router = { version = "0.18" }
-db_manager = { path = "db_manager" }
+shared = { path = "shared" }
 wasm-logger = "0.2.0"
 log = "0.4.20"
 yew-autoprops = "0.4.1"
 stylist = { version = "0.13", features = ["yew", "yew_integration"] }
+serde = "1.0.197"
 
 [workspace]
-members = [
-    "src-tauri",
-    "db_manager",
-]
+members = ["src-tauri", "shared"]

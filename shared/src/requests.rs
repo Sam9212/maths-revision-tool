@@ -10,25 +10,29 @@
 //! enum for) in another struct which has other
 //! information and implementation aside from it.
 
+use serde::{Deserialize, Serialize};
 use std::{error::Error, fmt::Display};
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct UserReqError {
     kind: UserReqErrorKind,
     pub message: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum UserReqErrorKind {
     InvalidDetails,
     AccountLocked,
     ConnectionError,
+    SerdeError,
     AddUserError,
+    AddSetError,
     StrikeAddError,
     StrikeResetError,
     DeleteUserError,
+    FetchUsersError,
+    FetchQuestionsError,
+    DeleteQuestionsError,
 }
 
 impl Display for UserReqError {

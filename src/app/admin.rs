@@ -1,9 +1,5 @@
 use chrono::Utc;
-use db_manager::{
-    commands::{AddUserArgs, DeleteUserArgs},
-    requests::UserReqError,
-    AccessLevel, User,
-};
+use shared::{commands::AddUserArgs, requests::UserReqError, AccessLevel, User};
 use stylist::yew::styled_component;
 use tauri_sys::{
     dialog::{MessageDialogBuilder, MessageDialogKind},
@@ -13,7 +9,7 @@ use tauri_sys::{
 use web_sys::{wasm_bindgen::JsCast, HtmlInputElement, HtmlSelectElement};
 // use db_manager::AccessLevel;
 use crate::components::{
-    inputs::{DateInput, Dropdown, LengthValidationInput, UserPicker},
+    inputs::{Button, DateInput, Dropdown, UserPicker, ValidatedInput},
     tabs::{Tab, TabController},
     theme_ctx::use_theme,
 };
@@ -37,36 +33,13 @@ pub fn admin() -> Html {
         fs = theme.font_size,
     );
 
-    // Store the values from the inputs in state vars so we can send them to the
-    // backend later in a query
-    let username = use_state(|| String::new());
-    let onchange_username = {
-        let username = username.clone();
+    // Store the values from the inputs in state vars so we can send
+    // them to the backend later with a query
+    let username = use_state_eq(|| AttrValue::from(String::new()));
+    let username_valid = use_state_eq(|| false);
 
-        move |e: Event| {
-            let value = e
-                .target()
-                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .expect("Input Element Failed To Cast")
-                .value();
-            log::info!("{}", value);
-            username.set(value);
-        }
-    };
-
-    let password = use_state(|| String::new());
-    let onchange_password = {
-        let password = password.clone();
-
-        move |e: Event| {
-            password.set(
-                e.target()
-                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .expect("Input Element Failed To Cast")
-                    .value(),
-            );
-        }
-    };
+    let password = use_state_eq(|| AttrValue::from(String::new()));
+    let password_valid = use_state_eq(|| false);
 
     let dob = use_state(|| Utc::now().format("%Y-%m-%d").to_string());
     let onchange_dob = {
@@ -114,8 +87,8 @@ pub fn admin() -> Html {
 
         move |_| {
             let user = User::new(
-                (*username).clone(),
-                (*password).clone(),
+                (*username).clone().to_string(),
+                (*password).clone().to_string(),
                 (*dob).clone(),
                 *selected,
             );
@@ -145,34 +118,14 @@ pub fn admin() -> Html {
         }
     };
 
-    let to_delete = use_state(|| String::new());
-    let onchange_deleter = {
-        let to_delete = to_delete.clone();
-        move |e: Event| {
-            let v = e
-                .target()
-                .and_then(|t| t.dyn_into::<HtmlSelectElement>().ok())
-                .expect("Input Element Failed To Cast")
-                .value();
-
-            to_delete.set(v);
-        }
-    };
+    let to_delete = use_state_eq(|| AttrValue::from(String::new()));
 
     let delacc = {
         let to_delete = to_delete.clone();
         move |_| {
             let to_delete = (*to_delete).clone();
             spawn_local(async move {
-                let result: Result<(), _> = invoke(
-                    "delete_user",
-                    &DeleteUserArgs {
-                        username: to_delete,
-                    },
-                )
-                .await;
-
-                match result {
+                match crate::commands::invoke_delete_user(to_delete.to_string()).await {
                     Ok(_) => {
                         let _ = MessageDialogBuilder::new()
                             .set_title("Delete Account")
@@ -181,14 +134,11 @@ pub fn admin() -> Html {
                             .await;
                     }
                     Err(why) => {
-                        if let Error::Command(s) = why {
-                            let why: UserReqError = s.into();
-                            let _ = MessageDialogBuilder::new()
-                                .set_title("Delete Account")
-                                .set_kind(MessageDialogKind::Error)
-                                .message(&why.message)
-                                .await;
-                        }
+                        let _ = MessageDialogBuilder::new()
+                            .set_title("Delete Account")
+                            .set_kind(MessageDialogKind::Error)
+                            .message(&why.message)
+                            .await;
                     }
                 }
             });
@@ -201,17 +151,17 @@ pub fn admin() -> Html {
             <TabController name={"add-edit-delete"}>
                 <Tab _id={"Add"}>
                     <h1>{ "Add New Account" }</h1>
-                    <LengthValidationInput min_length={3} max_length={20} required={true} id={"username"} onchange={onchange_username}>{ "Username" }</LengthValidationInput>
-                    <LengthValidationInput input_type={"password"} min_length={8} max_length={20} required={true} id={"password"} onchange={onchange_password}>{ "Password" }</LengthValidationInput>
+                    <ValidatedInput id={"username"} text_handle={username} validity_handle={username_valid}>{ "Username" }</ValidatedInput>
+                    <ValidatedInput hidden={true} minl={8} id={"password"} text_handle={password} validity_handle={password_valid}>{ "Password" }</ValidatedInput>
                     <DateInput onchange={onchange_dob} id={"dob"}>{ "DOB" }</DateInput>
-                    <Dropdown id={"access"} {onchange}>{ "Select Access" }</Dropdown>
-                    <button {onclick}>{ "Create" }</button>
+                    <Dropdown id={"access"} {onchange}>{ "Select Access Level" }</Dropdown>
+                    <Button {onclick}>{ "Create" }</Button>
                 </Tab>
 
                 <Tab _id={"Delete"}>
                     <h1>{ "Delete Existing Account" }</h1>
-                    <UserPicker id={"deleter"} onchange={onchange_deleter}>{ "Pick a user" }</UserPicker>
-                    <button onclick={delacc}>{ "Delete" }</button>
+                    <UserPicker id={"deleter"} user_handle={to_delete}>{ "Pick a user" }</UserPicker>
+                    <Button onclick={delacc}>{ "Delete" }</Button>
                 </Tab>
             </TabController>
         </div>

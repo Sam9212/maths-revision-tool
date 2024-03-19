@@ -14,8 +14,8 @@ tauri-build = { version = "1.5", features = [] }
 
 [dependencies]
 mongodb = { version = "2.7", default-features = false, features = ["sync"] }
-tauri = { version = "1.5", features = [ "dialog-message", "shell-open"] }
-db_manager = { path = "../db_manager" }
+tauri = { version = "1.5", features = ["dialog-message", "shell-open"] }
+shared = { path = "../shared" }
 once_cell = "1.19.0"
 
 [features]

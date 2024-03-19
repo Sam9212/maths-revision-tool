@@ -8,8 +8,8 @@
 pub mod database;
 
 use database::DatabaseManager;
-use db_manager::{requests::UserReqError, User};
 use once_cell::sync::Lazy;
+use shared::{questions::QuestionSet, requests::UserReqError, User};
 
 // Statics are somewhat like constants - the important aspect of them that is relevant
 // here is that they are available everywhere in the program, on every thread, no matter
@@ -73,6 +73,21 @@ fn delete_user(username: String) -> Result<(), UserReqError> {
     DBM.delete_user(username)
 }
 
+#[tauri::command]
+fn get_question_sets() -> Result<Vec<QuestionSet>, UserReqError> {
+    DBM.get_question_sets()
+}
+
+#[tauri::command]
+fn add_question_set(new_set: QuestionSet) -> Result<(), UserReqError> {
+    DBM.add_question_set(new_set)
+}
+
+#[tauri::command]
+fn delete_question_set(name: String) -> Result<(), UserReqError> {
+    DBM.delete_question_set(name)
+}
+
 /// This is the starting point of the backend. It creates a `Builder` object
 /// which is what I use to change the configuration of the program. It starts
 /// off as a default, which is why I call the `std::default::Default` implementation
@@ -88,7 +103,10 @@ fn main() {
             debug_fetch_all,
             all_usernames,
             unlock_user,
-            delete_user
+            delete_user,
+            get_question_sets,
+            add_question_set,
+            delete_question_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -1,7 +1,11 @@
+#![allow(non_camel_case_types)]
+
+use crate::{app::Route, components::theme_ctx::use_theme};
+use shared::User;
+use stylist::yew::styled_component;
 use yew::prelude::*;
+use yew_autoprops::autoprops;
 use yew_router::prelude::*;
-use crate::app::Route;
-use db_manager::User;
 
 #[derive(PartialEq, Clone)]
 pub struct UserCtx {
@@ -16,43 +20,47 @@ impl Reducible for UserCtx {
     }
 }
 
-#[derive(Properties, PartialEq)]
-pub struct UserContextProviderProps {
-    pub children: Children,
-}
-
 /// The UserContextProvider is a component which will be used
 /// to act as a global storage of which user is logged into the system
 /// at a given time. Additionally, it will provide a div at the bottom
 /// of the screen which tells the user what account they are logged into,
 /// and allows them to quickly log out.
-#[function_component(UserContextProvider)]
-pub fn user_context_provider(props: &UserContextProviderProps) -> Html {
-    let user = use_reducer(|| UserCtx { 
-        inner: None 
-    });
+#[autoprops]
+#[styled_component(UserContextProvider)]
+pub fn user_context_provider(children: &Children) -> Html {
+    let user = use_reducer(|| UserCtx { inner: None });
 
-    let class = classes!(
-        "flex", "flex-column",
-        "justify-content-space-between",
-        "height-100vh"
+    let class = css!(
+        r#"
+            display: flex;
+            flex-flow: column nowrap;
+            justify-content: space-between;
+            height: 100vh;
+        "#,
     );
 
-    html!{
+    html! {
         <ContextProvider<UseReducerHandle<UserCtx>> context={user}>
             <div {class}>
-                { props.children.clone() }
+                { children }
                 <ContextBar />
             </div>
         </ContextProvider<UseReducerHandle<UserCtx>>>
     }
 }
 
-#[function_component(ContextBar)]
+#[styled_component(ContextBar)]
 pub fn context_bar() -> Html {
-    let class = classes!(
-        "padding-1hrem", "background-color-bg-dark",
-        "flex", "justify-content-space-between",
+    let theme = use_theme();
+    let class = css!(
+        r#"
+            padding: calc( 0.5 * ${fs} );
+            background-color: ${bg};
+            display: flex;
+            justify-content: space-between;
+        "#,
+        fs = theme.font_size,
+        bg = theme.bg_color,
     );
 
     let ctx = use_context::<UseReducerHandle<UserCtx>>().expect("Couldn't Get User Context");
@@ -70,7 +78,7 @@ pub fn context_bar() -> Html {
         }
     };
 
-    html!{
+    html! {
         <div {class}>
             if let Some(user) = user.inner {
                 <p>{ "Logged in as " }{ user.username() }</p>
@@ -81,4 +89,9 @@ pub fn context_bar() -> Html {
             }
         </div>
     }
+}
+
+#[hook]
+pub fn use_user() -> UseReducerHandle<UserCtx> {
+    use_context().expect("couldn't get user context")
 }

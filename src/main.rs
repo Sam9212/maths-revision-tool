@@ -1,4 +1,5 @@
 pub mod app;
+pub mod commands;
 pub mod components;
 
 use app::App;

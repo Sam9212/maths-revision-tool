@@ -1,20 +1,44 @@
+use crate::{
+    app::Route,
+    components::{inputs::Button, layout::Column, theme_ctx::use_theme, user_ctx::use_user},
+};
+use stylist::yew::styled_component;
 use yew::prelude::*;
 use yew_router::hooks::use_navigator;
-use crate::app::Route;
 
-#[function_component(Dashboard)]
+#[styled_component(Dashboard)]
 pub fn dashboard() -> Html {
     let nav = use_navigator().expect("Could not get hook to navigator");
-
-    let onclick = move |_| {
-        nav.clone().push(&Route::Admin)
+    let theme = use_theme();
+    let user = use_user();
+    let user = match (*user).clone().inner {
+        Some(user) => user,
+        None => {
+            nav.push(&Route::Login);
+            return html! {};
+        }
     };
 
-    html!{
-        <div class={classes!("padding-1rem")}>
-            <h1 class={classes!("margin-bottom-1rem")}>{ "Dashboard" }</h1>
-            <button {onclick}>{ "Go To Admin" }</button>
-            <p>{ "Shows for everyone instead of just admins for now but it's not hard" }</p>
-        </div>
+    let class = css!(
+        r#"
+            padding: ${fs};
+            background-color: ${bg};
+        "#,
+        bg = theme.bg_color,
+        fs = theme.font_size
+    );
+
+    html! {
+        <Column wfill={true} hfill={true} justify_content={"center"} align_items={"center"}>
+            <Column {class}>
+                <h1>{ "Dashboard" }</h1>
+                <br />
+                <p>{ "Welcome back, " }{ user.username() }{ "." }</p>
+                <br />
+                <p>{ "If you would like to take a test" }</p>
+                <p>{ "you can go to the browser." }</p>
+                <Button onclick={move |_| nav.push(&Route::Browser)}>{ "Go To Browser" }</Button>
+            </Column>
+        </Column>
     }
 }

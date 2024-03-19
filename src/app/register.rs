@@ -1,9 +1,14 @@
 use crate::{
     app::Route,
-    components::inputs::{DateInput, LengthValidationInput},
+    components::{
+        inputs::{Button, DateInput, ValidatedInput},
+        layout::Column,
+        theme_ctx::use_theme,
+    },
 };
 use chrono::Utc;
-use db_manager::{commands::AddUserArgs, requests::UserReqError, AccessLevel, User};
+use shared::{commands::AddUserArgs, requests::UserReqError, AccessLevel, User};
+use stylist::yew::styled_component;
 use tauri_sys::{
     dialog::{MessageDialogBuilder, MessageDialogKind},
     tauri::invoke,
@@ -11,84 +16,23 @@ use tauri_sys::{
 };
 use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
 use yew::{platform::spawn_local, prelude::*};
-use yew_router::hooks::use_navigator;
+use yew_router::{components::Link, hooks::use_navigator};
 
-#[function_component(Register)]
+#[styled_component(Register)]
 pub fn register() -> Html {
-    let username = use_state_eq(|| String::new());
+    let username = use_state_eq(|| AttrValue::from(String::new()));
+    let username_valid = use_state_eq(|| false);
 
-    let password = use_state_eq(|| String::new());
+    let password = use_state_eq(|| AttrValue::from(String::new()));
+    let password_valid = use_state_eq(|| false);
 
-    let confirmation = use_state_eq(|| String::new());
-    let confirmation_valid = use_state_eq(|| true);
-    let confirmation_reason = use_state_eq(|| String::new());
+    let confirmation = use_state_eq(|| AttrValue::from(String::new()));
+    let confirmation_valid = use_state_eq(|| false);
+    let confirmation_verif = use_state_eq(|| false);
 
     let date = use_state_eq(|| Utc::now().format("%Y-%m-%d").to_string());
 
     let nav = use_navigator().unwrap();
-
-    let onchange_username = {
-        let username = username.clone();
-        move |e: Event| {
-            username.set(
-                e.target()
-                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .expect("Input Element Failed To Cast")
-                    .value(),
-            );
-        }
-    };
-
-    let onchange_password = {
-        let password = password.clone();
-        let confirmation = confirmation.clone();
-        let confirmation_valid = confirmation_valid.clone();
-        let confirmation_reason = confirmation_reason.clone();
-
-        move |e: Event| {
-            let new_val = e
-                .target()
-                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .expect("Input Element Failed To Cast")
-                .value();
-
-            let validity = new_val == *confirmation;
-            confirmation_valid.set(validity);
-            confirmation_reason.set(if !validity {
-                "Passwords don't match!".to_string()
-            } else {
-                String::new()
-            });
-            password.set(new_val);
-        }
-    };
-
-    let onchange_confirmation = {
-        let password = password.clone();
-        let confirmation = confirmation.clone();
-        let confirmation_valid = confirmation_valid.clone();
-        let confirmation_reason = confirmation_reason.clone();
-
-        move |e: Event| {
-            let new_val = e
-                .target()
-                .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                .expect("Input Element Failed To Cast")
-                .value();
-
-            // info!("*password = {}, new_val = {}", *password, new_val);
-            // info!("*password == new_val = {}", *password == new_val);
-
-            let validity = *password == new_val;
-            confirmation_reason.set(if !validity {
-                "Passwords don't match!".to_string()
-            } else {
-                String::new()
-            });
-            confirmation_valid.set(validity);
-            confirmation.set(new_val);
-        }
-    };
 
     let onchange_date = {
         let date = date.clone();
@@ -115,8 +59,8 @@ pub fn register() -> Html {
             }
 
             let user = User::new(
-                username.clone(),
-                password.clone(),
+                username.clone().to_string(),
+                password.clone().to_string(),
                 date.clone(),
                 AccessLevel::USER,
             );
@@ -140,6 +84,20 @@ pub fn register() -> Html {
         }
     };
 
+    let theme = use_theme();
+    let class = css!(
+        r#"
+            background-color: ${bg};
+            padding: ${fs};
+
+            h1 {
+                margin-bottom: calc( 0.5 * ${fs} );
+            }
+        "#,
+        bg = theme.bg_color,
+        fs = theme.font_size,
+    );
+
     html! {
         // Every page needs this outer div. It does not necessarily need any classes,
         // however I find it appropriate to add some spacing around the edges of the
@@ -147,29 +105,19 @@ pub fn register() -> Html {
         // element in an `html! macro, I still need to nest other components inside
         // of this 1 root component so that the flex spacing of the UserContext bar
         // does not mess up the layout.
-        <div class={classes!("margin-1rem")}>
-            <h1 class={classes!("margin-bottom-1rem")}>{ "Register" }</h1>
-            <LengthValidationInput onchange={onchange_username} class={classes!("margin-bottom-1qrem")} id={"username"} min_length={3} max_length={20} required={true}>
-                { "Username" }
-            </LengthValidationInput>
-            <p style={"font-size: 0.75rem;"} class={classes!("margin-bottom-1rem")}>{ "*A valid username is between 3 and 20 characters" }</p>
-
-            <LengthValidationInput input_type={"password"} onchange={onchange_password} class={classes!("margin-bottom-1qrem")} id={"password"} min_length={8} max_length={20} required={true}>
-                { "Password" }
-            </LengthValidationInput>
-            <p style={"font-size: 0.75rem;"} class={classes!("margin-bottom-1rem")}>{ "*A valid password is between 8 and 20 characters" }</p>
-
-            <LengthValidationInput valid={confirmation_valid} valid_reason={confirmation_reason} input_type={"password"} onchange={onchange_confirmation} class={classes!("margin-bottom-1rem")} id={"confirmation"} min_length={8} max_length={20} required={true}>
-                { "Confirm Password" }
-            </LengthValidationInput>
-
-            <DateInput onchange={onchange_date} class={classes!("margin-bottom-1rem")} id={"dob"}>
-                { "Enter Your DOB" }
-            </DateInput>
-
-            <button {onclick}>
-                { "Register" }
-            </button>
-        </div>
+        <Column justify_content={"center"} align_items={"center"} wfill={true} hfill={true}>
+            <Column justify_content={"center"} align_items={"center"} {class}>
+                <h1>{ "Registration" }</h1>
+                <ValidatedInput text_handle={username} validity_handle={username_valid.clone()} id={"username"}>{ "Username" }</ValidatedInput>
+                <ValidatedInput text_handle={password.clone()} validity_handle={password_valid.clone()} id={"password"} minl={8} hidden={true}>{ "Password" }</ValidatedInput>
+                <ValidatedInput text_handle={confirmation} secondary_handle={Some(password)} verif_handle={confirmation_verif.clone()} validity_handle={confirmation_valid.clone()} id={"confirmation"} minl={8} hidden={true}>{ "Confirm Password" }</ValidatedInput>
+                <DateInput onchange={onchange_date} class={classes!("margin-bottom-1rem")} id={"dob"}>
+                    { "Enter Your DOB" }
+                </DateInput>
+                <br />
+                <Button {onclick} clickable={*username_valid && *password_valid && *confirmation_valid && *confirmation_verif}>{ "Register" }</Button>
+                <p>{"Returning User? "}<Link<Route> to={Route::Login}>{ "Login" }</Link<Route>></p>
+            </Column>
+        </Column>
     }
 }

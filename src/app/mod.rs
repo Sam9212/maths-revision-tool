@@ -1,15 +1,21 @@
 mod admin;
+mod browser;
+mod creator;
 mod dash;
 mod login;
 mod register;
 
 use super::{
-    app::{admin::Admin, dash::Dashboard, login::Login, register::Register},
+    app::{
+        admin::Admin, browser::Browser, creator::Creator, dash::Dashboard, login::Login,
+        register::Register,
+    },
     components::{
         theme_ctx::{Theme, ThemeProvider},
         user_ctx::UserContextProvider,
     },
 };
+use stylist::yew::{styled_component, Global};
 use yew::prelude::*;
 use yew_router::prelude::*;
 
@@ -23,6 +29,10 @@ pub enum Route {
     Dashboard,
     #[at("/admin")]
     Admin,
+    #[at("/browser")]
+    Browser,
+    #[at("/creator")]
+    Creator,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -33,16 +43,19 @@ pub fn switch(route: Route) -> Html {
         Route::Login => html! { <Login /> },
         Route::Register => html! { <Register /> },
         Route::Dashboard => html! { <Dashboard /> },
+        Route::Browser => html! { <Browser /> },
+        Route::Creator => html! { <Creator /> },
         Route::Admin => html! { <Admin /> },
         Route::NotFound => html! { "Page Not Found" },
     }
 }
 
-#[function_component(App)]
+#[styled_component(App)]
 pub fn app() -> Html {
     let context = Theme {
         font_size: "16px".to_string(),
         font_family: "Inter".to_string(),
+        input_color: "#BBBBBB".to_string(),
         primary_color: "#1F6AFB".to_string(),
         primary_shade: "#3783FF".to_string(),
         fg_color: "#FFFFFF".to_string(),
@@ -52,13 +65,67 @@ pub fn app() -> Html {
         fail_color: "#C13939".to_string(),
     };
 
+    let css = css!(
+        r#"
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 16px;
+
+            color: ${fg};
+
+            font-synthesis: none;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            -webkit-text-size-adjust: 100%;
+
+            * {
+                margin: 0;
+                padding: 0;
+            }
+
+            a {
+                color: ${fg};
+                text-decoration: none;
+
+                background: linear-gradient(${pc}, ${pc}),
+                    linear-gradient(
+                        to right,
+                        ${pc},
+                        ${pcs},
+                        ${pc}
+                    );
+                background-size:
+                    100% 3px,
+                    0 3px;
+                background-position:
+                    100% 100%,
+                    0 100%;
+                background-repeat: no-repeat;
+                transition: all 0.3s ease-in;
+            }
+
+            a:hover {
+                background-size:
+                    0 3px,
+                    100% 3px;
+                color: ${pcs};
+            }
+        "#,
+        fg = context.fg_color,
+        pc = context.primary_color,
+        pcs = context.primary_shade,
+    );
+
     html! {
-        <BrowserRouter>
-            <ThemeProvider {context}>
-                <UserContextProvider>
-                    <Switch<Route> render={switch} />
-                </UserContextProvider>
-            </ThemeProvider>
-        </BrowserRouter>
+        <>
+            <Global {css}/>
+            <BrowserRouter>
+                <ThemeProvider {context}>
+                    <UserContextProvider>
+                        <Switch<Route> render={switch} />
+                    </UserContextProvider>
+                </ThemeProvider>
+            </BrowserRouter>
+        </>
     }
 }

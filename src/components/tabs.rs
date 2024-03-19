@@ -57,13 +57,14 @@ pub fn tab_controller(name: AttrValue, children: &ChildrenWithProps<Tab>) -> Htm
                 }
             };
 
-            html!{
+            html! {
                 <div>
-                    <input type={"radio"} key={&*id.clone()} id={id.clone()} name={name.clone()} {onclick}/>
+                    <input type={"radio"} id={id.clone()} name={name.clone()} {onclick}/>
                     <label for={id.clone()}>{ id }</label>
                 </div>
             }
-        }).collect::<Html>()
+        })
+        .collect::<Html>()
         // Collecting as an Html object is a very interesting feature of the Yew library.
         // This allows me to iterate over an object and turn it into a list of HTML elements,
         // Which results in this nice and clean pattern as seen above, for the button construction.
@@ -85,11 +86,11 @@ pub fn tab_controller(name: AttrValue, children: &ChildrenWithProps<Tab>) -> Htm
             .panel label {
                 display: block;
                 padding: 4px;
-                background-color: ${p}
+                background-color: ${p};
             }
 
             .panel input:checked + label {
-                background-color: ${ps}
+                background-color: ${ps};
             }
 
             .panel {
