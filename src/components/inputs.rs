@@ -2,15 +2,20 @@
 
 use super::theme_ctx::use_theme;
 use chrono::Utc;
+use shared::{requests::UserReqError, AccessLevel, User};
 use stylist::yew::styled_component;
 use web_sys::{wasm_bindgen::JsCast, HtmlInputElement, HtmlSelectElement};
-use yew::{prelude::*, suspense::use_future};
+use yew::{
+    prelude::*,
+    suspense::{use_future_with, Suspension, UseFutureHandle},
+};
 use yew_autoprops::autoprops;
 
 #[autoprops]
 #[styled_component(ValidatedInput)]
 pub fn validated_input(
     children: &Children,
+    #[prop_or(false)] shaded: bool,
     #[prop_or(3)] minl: usize,
     #[prop_or(20)] maxl: usize,
     id: AttrValue,
@@ -124,7 +129,11 @@ pub fn validated_input(
         fs = theme.font_size,
         ic = theme.input_color,
         fg = theme.fg_color,
-        bg = theme.bg_color,
+        bg = if !shaded {
+            &theme.bg_color
+        } else {
+            &theme.bg_shade
+        },
         pc = if verif_bool && **validity_handle {
             theme.primary_color
         } else {
@@ -183,62 +192,139 @@ pub fn button(
     );
 
     html! {
-        <button disabled={!clickable} {class} {onclick}><b>{ children }</b></button>
+        <button disabled={!clickable} {class} onclick={if clickable {onclick} else {Callback::from(|_| {})}}><b>{ children }</b></button>
     }
 }
 
-#[derive(Properties, PartialEq, Clone)]
-pub struct DateInputProps {
-    #[prop_or(Classes::new())]
-    pub class: Classes,
-    pub children: Children,
-    pub id: AttrValue,
-    pub onchange: Callback<Event>,
-}
+#[autoprops]
+#[styled_component(DateInput)]
+pub fn date_input(
+    #[prop_or(false)] shaded: bool,
+    children: &Children,
+    id: AttrValue,
+    handle: &UseStateHandle<AttrValue>,
+) -> Html {
+    let theme = use_theme();
+    let class = css!(
+        r#"
+            padding: calc( 0.5 * ${fs} );
+            border: 4px solid ${pc};
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
 
-#[function_component(DateInput)]
-pub fn date_input(props: &DateInputProps) -> Html {
-    let DateInputProps {
-        class,
-        children,
-        id,
-        onchange,
-    } = props.clone();
+            label {
+                margin-right: calc( 0.25 * ${fs} );
+                color: ${ip};
+            }
 
-    let now = Utc::now();
-    let now = now.format("%Y-%m-%d");
+            input {
+                background-color: ${bg};
+                color: ${fg};
+                border: none;
+                margin-bottom: 1px;
+            }
+        "#,
+        ip = theme.input_color,
+        bg = if !shaded {
+            theme.bg_color
+        } else {
+            theme.bg_shade
+        },
+        fg = theme.fg_color,
+        pc = theme.primary_color,
+        fs = theme.font_size,
+    );
+    let now = Utc::now().format("%Y-%m-%d").to_string();
+    let handle = handle.clone();
+    let onchange = move |e: Event| {
+        handle.set(
+            e.target_dyn_into::<HtmlInputElement>()
+                .expect("Input Element Failed To Cast")
+                .value()
+                .into(),
+        );
+    };
 
     html! {
         <div {class}>
             <label for={id.clone()}>{ children }</label>
-            <input type={"date"} {onchange} name={id.clone()} {id} min={"1990-01-01"} max={now.to_string()}/>
+            <input type={"date"} {onchange} name={id.clone()} {id} min={"1990-01-01"} max={now}/>
         </div>
     }
 }
 
 #[autoprops]
-#[function_component(Dropdown)]
-pub fn dropdown(children: &Children, id: AttrValue, onchange: Callback<Event>) -> Html {
+#[styled_component(AccessPicker)]
+pub fn access_picker(
+    children: &Children,
+    id: AttrValue,
+    handle: &UseStateHandle<AccessLevel>,
+) -> Html {
+    let onchange = {
+        let handle = handle.clone();
+        move |e: Event| {
+            let level_str = e.target_dyn_into::<HtmlSelectElement>().unwrap().value();
+            handle.set(match &level_str[..] {
+                "User" => AccessLevel::USER,
+                "Teacher" => AccessLevel::TEACHER,
+                "Admin" => AccessLevel::ADMIN,
+                _ => unreachable!("string can only be these 3 values"),
+            })
+        }
+    };
+
+    let theme = use_theme();
+    let class = css!(
+        r#"
+            padding: calc( 0.5 * ${fs} );
+            border: 4px solid ${pc};
+
+            label {
+                color: ${fc};
+            }
+
+            select {
+                margin-left: calc( 0.25 * ${fs} );
+            }
+        "#,
+        fc = theme.input_color,
+        fs = theme.font_size,
+        pc = theme.primary_color,
+    );
+
     html! {
-        <>
+        <div {class}>
             <label for={id.clone()}>{ children }</label>
             <select name={id.clone()} {id} {onchange}>
                 <option value="User">{ "User" }</option>
                 <option value="Teacher">{ "Teacher" }</option>
                 <option value="Admin">{ "Administrator" }</option>
             </select>
-        </>
+        </div>
     }
 }
 
+#[hook]
+pub fn use_users(
+    update: UseStateHandle<bool>,
+) -> Result<UseFutureHandle<Result<Vec<User>, UserReqError>>, Suspension> {
+    use_future_with(update, |_| async {
+        crate::commands::invoke_get_usernames().await
+    })
+}
+
 #[autoprops]
-#[function_component(UserPicker)]
+#[styled_component(UserPicker)]
 pub fn user_picker(
     children: &Children,
     id: AttrValue,
     user_handle: &UseStateHandle<AttrValue>,
+    dependency: &UseStateHandle<bool>,
 ) -> Html {
-    let unames = match use_future(|| async { crate::commands::invoke_get_usernames().await }) {
+    let theme = use_theme();
+    let unames = match use_users(dependency.clone()) {
         Ok(unames) => unames.clone().unwrap(),
         Err(e) => return html! { e },
     };
@@ -261,11 +347,29 @@ pub fn user_picker(
         );
     };
 
+    let class = css!(
+        r#"
+            padding: calc( 0.5 * ${fs} );
+            border: 4px solid ${pc};
+
+            label {
+                color: ${fc};
+            }
+
+            select {
+                margin-left: calc( 0.25 * ${fs} );
+            }
+        "#,
+        fc = theme.input_color,
+        fs = theme.font_size,
+        pc = theme.primary_color,
+    );
+
     html! {
-        <>
+        <div {class}>
             <label for={id.clone()}>{ children }</label>
             <select name={id.clone()} {id} {onchange}>{ options }</select>
-        </>
+        </div>
     }
 }
 

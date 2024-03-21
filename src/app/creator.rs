@@ -29,13 +29,21 @@ pub fn creator() -> Html {
     let theme = use_theme();
     let class = css!(
         r#"
-            margin: ${fs};
+            margin-top: ${fs};
+            margin-left: ${fs};
+            margin-right: ${fs};
+
+            > div {
+                margin-bottom: ${fs};
+                background-color: ${bg};
+            }
 
             h1 {
                 font-size: calc( 1.5 * ${fs} );
                 text-align: center;
             }
         "#,
+        bg = theme.bg_color,
         fs = theme.font_size,
     );
 
@@ -84,12 +92,10 @@ pub fn creator() -> Html {
                     let _ = MessageDialogBuilder::new()
                         .set_title("Quiz Creator")
                         .set_kind(MessageDialogKind::Error)
-                        .message("Question Name Invalid")
+                        .message("quiz name is invalid")
                         .await;
                 });
-            }
-
-            if let Some(qlist) = questions {
+            } else if let Some(qlist) = questions {
                 let qset = QuestionSet::new((*name).to_string(), user.username().clone(), qlist);
                 let nav = nav.clone();
                 spawn_local(async move {
@@ -98,7 +104,7 @@ pub fn creator() -> Html {
                             let _ = MessageDialogBuilder::new()
                                 .set_title("Quiz Creator")
                                 .set_kind(MessageDialogKind::Info)
-                                .message("Succesfully uploaded question set!")
+                                .message("succesfully uploaded question set")
                                 .await;
                         }
                         Err(why) => {
@@ -116,8 +122,8 @@ pub fn creator() -> Html {
                 spawn_local(async move {
                     let _ = MessageDialogBuilder::new()
                         .set_title("Quiz Creator")
-                        .set_kind(MessageDialogKind::Info)
-                        .message("Question form was not all valid, try again!")
+                        .set_kind(MessageDialogKind::Error)
+                        .message("question form was not all valid, try again")
                         .await;
                 });
             }
@@ -128,7 +134,9 @@ pub fn creator() -> Html {
         <Column {class} hfill={true}>
             <Row wfill={true} justify_content={"space-between"} align_items={"center"}>
                 <ValidatedInput id={"name"} maxl={30} text_handle={name} validity_handle={name_v}>{ "Q-Set Name" }</ValidatedInput>
+                <div class={classes!("expander")}></div>
                 <h1>{ "Question Writer" }</h1>
+                <div class={classes!("expander")}></div>
                 <Button {onclick}>{ "Publish" }</Button>
             </Row>
             <Column hfill={true} wfill={true} justify_content={"center"} align_items={"center"}>

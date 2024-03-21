@@ -7,14 +7,9 @@ use crate::{
     },
 };
 use chrono::Utc;
-use shared::{commands::AddUserArgs, requests::UserReqError, AccessLevel, User};
+use shared::{AccessLevel, User};
 use stylist::yew::styled_component;
-use tauri_sys::{
-    dialog::{MessageDialogBuilder, MessageDialogKind},
-    tauri::invoke,
-    Error,
-};
-use web_sys::{wasm_bindgen::JsCast, HtmlInputElement};
+use tauri_sys::dialog::{MessageDialogBuilder, MessageDialogKind};
 use yew::{platform::spawn_local, prelude::*};
 use yew_router::{components::Link, hooks::use_navigator};
 
@@ -30,53 +25,38 @@ pub fn register() -> Html {
     let confirmation_valid = use_state_eq(|| false);
     let confirmation_verif = use_state_eq(|| false);
 
-    let date = use_state_eq(|| Utc::now().format("%Y-%m-%d").to_string());
+    let date = use_state_eq(|| AttrValue::from(Utc::now().format("%Y-%m-%d").to_string()));
 
     let nav = use_navigator().unwrap();
 
-    let onchange_date = {
-        let date = date.clone();
-        move |e: Event| {
-            date.set(
-                e.target()
-                    .and_then(|t| t.dyn_into::<HtmlInputElement>().ok())
-                    .expect("Input Element Failed to Cast")
-                    .value(),
-            )
-        }
-    };
-
     let onclick = {
-        let username = (*username).clone();
-        let password = (*password).clone();
-        let confirmation = (*confirmation).clone();
-        let date = (*date).clone();
+        let username = username.clone();
+        let password = password.clone();
+        let date = date.clone();
         let nav = nav.clone();
 
         move |_| {
-            if confirmation != password {
-                return;
-            }
-
             let user = User::new(
-                username.clone().to_string(),
-                password.clone().to_string(),
-                date.clone(),
+                (*username).to_string(),
+                (*password).to_string(),
+                (*date).to_string(),
                 AccessLevel::USER,
             );
             spawn_local(async move {
-                let res: Result<(), _> = invoke("add_user", &AddUserArgs { newUser: user }).await;
-                match res {
-                    Ok(_) => {}
+                match crate::commands::invoke_add_user(user).await {
+                    Ok(_) => {
+                        let _ = MessageDialogBuilder::new()
+                            .set_title("Registration")
+                            .set_kind(MessageDialogKind::Info)
+                            .message("Your account has been succesfully created!")
+                            .await;
+                    }
                     Err(why) => {
-                        if let Error::Command(s) = why {
-                            let why: UserReqError = s.into();
-                            let _ = MessageDialogBuilder::new()
-                                .set_title("Registration")
-                                .set_kind(MessageDialogKind::Error)
-                                .message(&why.message)
-                                .await;
-                        }
+                        let _ = MessageDialogBuilder::new()
+                            .set_title("Registration")
+                            .set_kind(MessageDialogKind::Error)
+                            .message(&why.message)
+                            .await;
                     }
                 }
             });
@@ -108,12 +88,14 @@ pub fn register() -> Html {
         <Column justify_content={"center"} align_items={"center"} wfill={true} hfill={true}>
             <Column justify_content={"center"} align_items={"center"} {class}>
                 <h1>{ "Registration" }</h1>
+                <br />
                 <ValidatedInput text_handle={username} validity_handle={username_valid.clone()} id={"username"}>{ "Username" }</ValidatedInput>
+                <br />
                 <ValidatedInput text_handle={password.clone()} validity_handle={password_valid.clone()} id={"password"} minl={8} hidden={true}>{ "Password" }</ValidatedInput>
+                <br />
                 <ValidatedInput text_handle={confirmation} secondary_handle={Some(password)} verif_handle={confirmation_verif.clone()} validity_handle={confirmation_valid.clone()} id={"confirmation"} minl={8} hidden={true}>{ "Confirm Password" }</ValidatedInput>
-                <DateInput onchange={onchange_date} class={classes!("margin-bottom-1rem")} id={"dob"}>
-                    { "Enter Your DOB" }
-                </DateInput>
+                <br />
+                <DateInput handle={date} id={"dob"}>{ "DOB" }</DateInput>
                 <br />
                 <Button {onclick} clickable={*username_valid && *password_valid && *confirmation_valid && *confirmation_verif}>{ "Register" }</Button>
                 <p>{"Returning User? "}<Link<Route> to={Route::Login}>{ "Login" }</Link<Route>></p>

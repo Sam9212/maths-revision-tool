@@ -1,15 +1,20 @@
 #![allow(non_camel_case_types)]
 
-use super::inputs::{RadioToggle, ValidatedInput};
-use crate::commands::invoke_get_question_sets;
+use crate::{
+    commands::invoke_get_question_sets,
+    components::{
+        inputs::{Button, RadioToggle, ValidatedInput},
+        layout::{Column, Row},
+    },
+};
 use shared::{
-    questions::{QuestionBuilder, QuestionSet},
+    questions::{Question, QuestionBuilder, QuestionSet},
     requests::UserReqError,
 };
 use stylist::yew::styled_component;
 use yew::{
     prelude::*,
-    suspense::{use_future, Suspension, UseFutureHandle},
+    suspense::{use_future_with, Suspension, UseFutureHandle},
 };
 use yew_autoprops::autoprops;
 
@@ -96,7 +101,8 @@ pub fn question_form(
 }
 
 #[hook]
-pub fn use_question_sets(
+pub fn use_question_sets_with(
+    update: UseStateHandle<bool>,
 ) -> Result<UseFutureHandle<Result<Vec<QuestionSet>, UserReqError>>, Suspension> {
-    use_future(|| async { invoke_get_question_sets().await })
+    use_future_with(update, |_| async { invoke_get_question_sets().await })
 }

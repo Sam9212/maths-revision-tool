@@ -18,7 +18,11 @@ use mongodb::{
 // Imports for the Database types in my shared library.
 use shared::{
     questions::QuestionSet,
-    requests::{UserReqError, UserReqErrorKind::*},
+    requests::{
+        UserReqError,
+        UserReqErrorKind::{self, *},
+    },
+    responses::QuizReview,
     User,
 };
 
@@ -73,6 +77,12 @@ impl DatabaseManager {
         // This is a getter for the collection in the database that
         // contains all the QuestionSet structs.
         self.db.collection("question")
+    }
+
+    pub fn get_results(&self) -> Collection<QuizReview> {
+        // This is a getter for the collection in the database that
+        // contains all the QuizReview structs.
+        self.db.collection("review")
     }
 
     pub fn validate_login(&self, username: String, password: String) -> Result<User, UserReqError> {
@@ -181,7 +191,7 @@ impl DatabaseManager {
             self.get_users()
                 .update_one(query, update, None)
                 .map_err(|_| {
-                    UserReqError::new(StrikeResetError, "Strikes couldn't be reset!".to_owned())
+                    UserReqError::new(StrikeResetError, "strikes could not be reset".to_owned())
                 })?;
         }
 
@@ -190,21 +200,30 @@ impl DatabaseManager {
 
     pub fn delete_user(&self, username: String) -> Result<(), UserReqError> {
         // Query filter
-        let query = doc! { "username": username };
-        let opt_user = self
+        let query = doc! { "username": &username };
+        let is_user = self
             .get_users() // Gets user table handle
             .find_one(query.clone(), None) // Need to clone query to reuse later
-            .map_err(|_| UserReqError::new(ConnectionError, "Could not fetch user".to_owned()))?;
+            .map_err(|_| UserReqError::new(ConnectionError, "db operation failed".to_owned()))?
+            .is_some();
 
-        if opt_user.is_some() {
+        if is_user {
             // The deletion query just takes a query filter and deletes
             // the first matching object.
-            self.get_users().delete_one(query, None).map_err(|_| {
-                UserReqError::new(DeleteUserError, "The user couldn't be deleted!".to_owned())
-            })?;
+            self.delete_redundant_reviews(username)?;
+            match self.get_users().delete_one(query, None) {
+                Ok(_) => Ok(()),
+                Err(_) => Err(UserReqError::new(
+                    DeleteUserError,
+                    "the user could not be deleted".to_owned(),
+                )),
+            }
+        } else {
+            Err(UserReqError::new(
+                UserReqErrorKind::InvalidDetails,
+                "could not find user".to_owned(),
+            ))
         }
-
-        Ok(())
     }
 
     pub fn add_question_set(&self, new_set: QuestionSet) -> Result<(), UserReqError> {
@@ -213,7 +232,7 @@ impl DatabaseManager {
             Err(_) => Err(UserReqError::new(
                 // Converting the error into my own error
                 AddSetError,
-                "Could not add question set to database".into(),
+                "could not add question set to database".into(),
             )),
         }
     }
@@ -221,25 +240,44 @@ impl DatabaseManager {
     pub fn delete_question_set(&self, name: String) -> Result<(), UserReqError> {
         // Query filter
         let query = doc! { "name": name };
-        let opt_user = self
+        let is_q = self
             .get_questions() // Gets question table handle
             .find_one(query.clone(), None) // Need to clone query to reuse later
-            .map_err(|_| {
-                UserReqError::new(ConnectionError, "Could not question user".to_owned())
-            })?;
+            .map_err(|_| UserReqError::new(ConnectionError, "db operation failed".to_owned()))?
+            .is_some();
 
-        if opt_user.is_some() {
-            // The deletion query just takes a query filter and deletes
-            // the first matching object
-            self.get_users().delete_one(query, None).map_err(|_| {
-                UserReqError::new(
+        // The deletion query just takes a query filter and deletes
+        // the first matching object
+        if is_q {
+            match self.get_questions().delete_one(query, None) {
+                Ok(_) => Ok(()),
+                Err(_) => Err(UserReqError::new(
                     DeleteQuestionsError,
-                    "The question couldn't be deleted!".to_owned(),
-                )
-            })?;
+                    "the question could not be deleted".to_owned(),
+                )),
+            }
+        } else {
+            Err(UserReqError::new(
+                InvalidDetails,
+                "could not find question set".to_owned(),
+            ))
         }
+    }
 
-        Ok(())
+    pub fn get_question_set(&self, set_name: String) -> Result<QuestionSet, UserReqError> {
+        let query = doc! { "name": set_name };
+        let set = self
+            .get_questions() // Gets question table handle
+            .find_one(query.clone(), None) // Need to clone query to reuse later
+            .map_err(|_| UserReqError::new(ConnectionError, "db operation failed".to_owned()))?;
+
+        match set {
+            Some(set) => Ok(set),
+            None => Err(UserReqError::new(
+                InvalidDetails,
+                "could not find question set".to_owned(),
+            )),
+        }
     }
 
     pub fn get_question_sets(&self) -> Result<Vec<QuestionSet>, UserReqError> {
@@ -250,5 +288,38 @@ impl DatabaseManager {
                 "could not fetch question sets".into(),
             )),
         }
+    }
+
+    pub fn get_quiz_reviews(&self) -> Result<Vec<QuizReview>, UserReqError> {
+        match self.get_results().find(None, None) {
+            Ok(v) => Ok(v.filter_map(|v| v.ok()).collect()),
+            Err(_) => Err(UserReqError::new(
+                FetchReviewsError,
+                "could not fetch quiz reviews".into(),
+            )),
+        }
+    }
+
+    pub fn add_quiz_review(&self, new_review: QuizReview) -> Result<(), UserReqError> {
+        match self.get_results().insert_one(new_review, None) {
+            Ok(_) => Ok(()), // We can discard the InsertOneResult
+            Err(_) => Err(UserReqError::new(
+                // Converting the error into my own error
+                AddReviewError,
+                "could not add quiz review to database".into(),
+            )),
+        }
+    }
+
+    fn delete_redundant_reviews(&self, username: String) -> Result<(), UserReqError> {
+        self.get_results()
+            .delete_many(doc! { "username": username }, None)
+            .map_err(|_| {
+                UserReqError::new(
+                    DeleteReviewError,
+                    "could not delete quiz reviews".to_owned(),
+                )
+            })?;
+        Ok(())
     }
 }

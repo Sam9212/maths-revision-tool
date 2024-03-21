@@ -1,7 +1,6 @@
-use fastrand::shuffle;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct QuestionSet {
     name: String,
     author: String,
@@ -100,14 +99,6 @@ impl QuestionSet {
         &self.questions
     }
 
-    pub fn shuffle_questions(&mut self) {
-        shuffle(&mut self.questions);
-    }
-
-    pub fn next_question(&mut self) -> Option<Question> {
-        self.questions.pop()
-    }
-
     pub fn new(name: String, author: String, questions: Vec<Question>) -> Self {
         QuestionSet {
             name,
@@ -118,20 +109,20 @@ impl QuestionSet {
 }
 
 impl Question {
-    // Setter for the title field
-    pub fn set_title(&mut self, title: String) {
-        self.title = title;
+    // Ref-getter for the title field
+    pub fn title(&self) -> &String {
+        &self.title
     }
 
-    pub fn set_markup(&mut self, markup: String) {
-        self.markup = markup;
+    pub fn markup(&self) -> &String {
+        &self.markup
     }
 
-    pub fn set_calculator_allowed(&mut self, calculator_allowed: bool) {
-        self.calculator_allowed = calculator_allowed;
+    pub fn calculator_allowed(&self) -> bool {
+        self.calculator_allowed
     }
 
-    pub fn set_answer(&mut self, answer: String) {
-        self.answer = answer;
+    pub fn answer(&self) -> &String {
+        &self.answer
     }
 }

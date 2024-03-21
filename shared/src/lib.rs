@@ -1,6 +1,8 @@
 pub mod commands;
 pub mod questions;
 pub mod requests;
+pub mod responses;
+
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 

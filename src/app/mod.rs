@@ -1,14 +1,15 @@
-mod admin;
 mod browser;
 mod creator;
 mod dash;
 mod login;
+mod quiz;
 mod register;
+mod review;
 
 use super::{
     app::{
-        admin::Admin, browser::Browser, creator::Creator, dash::Dashboard, login::Login,
-        register::Register,
+        browser::Browser, creator::Creator, dash::Dashboard, login::Login, quiz::Quiz,
+        register::Register, review::Review,
     },
     components::{
         theme_ctx::{Theme, ThemeProvider},
@@ -27,12 +28,14 @@ pub enum Route {
     Register,
     #[at("/dash")]
     Dashboard,
-    #[at("/admin")]
-    Admin,
     #[at("/browser")]
     Browser,
     #[at("/creator")]
     Creator,
+    #[at("/quiz/:set_name")]
+    Quiz { set_name: AttrValue },
+    #[at("/review")]
+    Review,
     #[not_found]
     #[at("/404")]
     NotFound,
@@ -45,7 +48,8 @@ pub fn switch(route: Route) -> Html {
         Route::Dashboard => html! { <Dashboard /> },
         Route::Browser => html! { <Browser /> },
         Route::Creator => html! { <Creator /> },
-        Route::Admin => html! { <Admin /> },
+        Route::Review => html! { <Review /> },
+        Route::Quiz { set_name } => html! { <Quiz {set_name} /> },
         Route::NotFound => html! { "Page Not Found" },
     }
 }
@@ -68,7 +72,7 @@ pub fn app() -> Html {
     let css = css!(
         r#"
             font-family: Arial, Helvetica, sans-serif;
-            font-size: 16px;
+            font-size: ${fs}px;
 
             color: ${fg};
 
@@ -111,6 +115,7 @@ pub fn app() -> Html {
                 color: ${pcs};
             }
         "#,
+        fs = context.font_size,
         fg = context.fg_color,
         pc = context.primary_color,
         pcs = context.primary_shade,

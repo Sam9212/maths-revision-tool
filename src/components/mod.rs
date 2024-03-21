@@ -1,3 +1,4 @@
+pub mod administration;
 pub mod inputs;
 pub mod layout;
 pub mod questions;

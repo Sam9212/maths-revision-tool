@@ -27,12 +27,15 @@ pub enum UserReqErrorKind {
     SerdeError,
     AddUserError,
     AddSetError,
+    AddReviewError,
     StrikeAddError,
     StrikeResetError,
     DeleteUserError,
     FetchUsersError,
     FetchQuestionsError,
+    FetchReviewsError,
     DeleteQuestionsError,
+    DeleteReviewError,
 }
 
 impl Display for UserReqError {
